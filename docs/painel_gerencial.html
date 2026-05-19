@@ -111,7 +111,7 @@
     </div>
     
     <div class="container">
-        <div class="ultima-att">🕒 Última atualização: 19/05/2026 18:05</div>
+        <div class="ultima-att">🕒 Última atualização: 19/05/2026 18:08</div>
         
         <div class="tabs">
             <button class="tab-btn ativo" onclick="abrirAba('resumo')">📊 Resumo por Regional</button>
@@ -162,7 +162,14 @@
     var minutos = totalMinutos % 60;
     return String(horas).padStart(2,'0') + ':' + String(minutos).padStart(2,'0');
 }
-        
+      function excelParaDataHora(dataNum, horaNum) {
+    var data = excelParaData(dataNum);
+    var hora = excelParaHora(horaNum);
+    if (data && hora) return data + ' ' + hora;
+    if (data) return data;
+    if (hora) return hora;
+    return '';
+}  
         function formatarMoeda(valor) {
             return 'R$ ' + valor.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         }
@@ -202,12 +209,11 @@
             var totalGeral = dados.reduce(function(s, i) { return s + (parseFloat((i['ValorVale'] || '0').toString().replace(',', '.')) || 0); }, 0);
             
             var html = '<h3>📋 ' + loja + ' - ' + dados.length + ' vales</h3><br>';
-            html += '<table><thead><tr><th>Hora</th><th>Regional</th><th>Data</th><th>Crachá</th><th>Motivo</th><th>Tipo Falha</th><th>Valor</th></tr></thead><tbody>';
+            html += '<table><thead><tr><th>Data/Hora</th><th>Regional</th><th>Crachá</th><th>Motivo</th><th>Tipo Falha</th><th>Valor</th></tr></thead><tbody>';
             dados.forEach(function(item) {
                 html += '<tr>';
-                html += '<td>' + excelParaHora(item['HoraInicio']) + '</td>';
+                html += '<td>' + excelParaDataHora(item['DataVale'], item['HoraInicio']) + '</td>';
                 html += '<td>' + (item['Regional'] || '') + '</td>';
-                html += '<td>' + excelParaData(item['DataVale']) + '</td>';
                 html += '<td>' + (item['Cracha'] || '') + '</td>';
                 html += '<td>' + (item['Motivo'] || '') + '</td>';
                 html += '<td>' + (item['TipoFalha'] || '') + '</td>';
