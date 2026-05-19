@@ -5,6 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Vales - Kalunga</title>
+    
+    <!-- PWA - Instalável no celular -->
+    <link rel="manifest" href="data:application/json,{'name':'Painel Vales Kalunga','short_name':'Painel Vales','start_url':'.','display':'standalone','background_color':'#003366','theme_color':'#003366','icons':[]}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Painel Vales">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#003366">
+    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #e8ecf1; color: #333; }
@@ -42,15 +51,25 @@
         /* MODAL */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
         .modal-overlay.ativo { display: flex; }
-        .modal { background: white; border-radius: 12px; width: 90%; max-width: 1100px; max-height: 85vh; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        .modal { background: white; border-radius: 12px; width: 95%; max-width: 1100px; max-height: 85vh; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
         .modal-header { background: #003366; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .modal-header h2 { font-size: 1.1em; }
+        .modal-header h2 { font-size: 1em; }
         .modal-close { background: none; border: none; color: white; font-size: 1.5em; cursor: pointer; padding: 0 8px; }
         .modal-close:hover { opacity: 0.7; }
         .modal-body { padding: 15px; overflow-y: auto; max-height: 65vh; }
-        .modal-body table { font-size: 11px; }
+        .modal-body table { font-size: 10px; }
         .modal-body thead { background: #0066cc; }
         .footer { text-align: center; padding: 15px; color: #999; font-size: 10px; }
+        
+        @media (max-width: 600px) {
+            .header h1 { font-size: 1.2em; }
+            .filtros-topo { flex-direction: column; gap: 5px; }
+            .stats { gap: 5px; }
+            .stat-card { min-width: 70px; padding: 8px 10px; }
+            .stat-card .valor { font-size: 16px; }
+            .tab-btn { padding: 8px 10px; font-size: 10px; }
+            .modal { width: 98%; max-height: 90vh; }
+        }
     </style>
 </head>
 <body>
@@ -60,7 +79,7 @@
     </div>
     
     <div class="filtros-topo">
-        <label>📅 Período (21 a 20):</label>
+        <label>📅 Período:</label>
         <select id="mes-ref">
             <option value="todos">📋 Todos</option>
             <option value="2026-01">Janeiro/2026</option>
@@ -92,7 +111,7 @@
     </div>
     
     <div class="container">
-        <div class="ultima-att">🕒 Última atualização: 19/05/2026 17:52</div>
+        <div class="ultima-att">🕒 Última atualização: 19/05/2026 18:00</div>
         
         <div class="tabs">
             <button class="tab-btn ativo" onclick="abrirAba('resumo')">📊 Resumo por Regional</button>
@@ -133,14 +152,16 @@
         }
         
         function excelParaHora(num) {
-            if (!num) return '';
-            var n = parseFloat(num);
-            if (isNaN(n)) return '';
-            var totalSegundos = Math.round(n * 86400);
-            var horas = Math.floor(totalSegundos / 3600);
-            var minutos = Math.floor((totalSegundos % 3600) / 60);
-            return String(horas).padStart(2,'0') + ':' + String(minutos).padStart(2,'0');
-        }
+    if (!num) return '';
+    var n = parseFloat(num);
+    if (isNaN(n)) return '';
+    // Pega apenas a parte decimal (a hora)
+    var parteDecimal = n - Math.floor(n);
+    var totalMinutos = Math.round(parteDecimal * 24 * 60);
+    var horas = Math.floor(totalMinutos / 60);
+    var minutos = totalMinutos % 60;
+    return String(horas).padStart(2,'0') + ':' + String(minutos).padStart(2,'0');
+}
         
         function formatarMoeda(valor) {
             return 'R$ ' + valor.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -164,22 +185,23 @@
                 lojas[loja].total += parseFloat((item['ValorVale'] || '0').toString().replace(',', '.')) || 0;
             });
             
-            var html = '<h3>Lojas de ' + regional + '</h3><br>';
-            html += '<table><thead><tr><th>Loja</th><th>QTD Vales</th><th>Valor Total</th></tr></thead><tbody>';
+            var html = '<h3>🏪 Lojas de ' + regional + '</h3><br>';
+            html += '<table><thead><tr><th>Loja</th><th>QTD</th><th>Valor Total</th></tr></thead><tbody>';
             Object.keys(lojas).sort().forEach(function(l) {
-                html += '<tr><td><span class="clicavel" onclick="abrirModalLoja(\'' + l + '\')">' + l + '</span></td><td>' + lojas[l].qtd + '</td><td class="valor">' + formatarMoeda(lojas[l].total) + '</td></tr>';
+                html += '<tr><td><span class="clicavel" onclick="abrirModalLoja(\'' + l.replace(/'/g, "\\'") + '\')">' + l + '</span></td><td>' + lojas[l].qtd + '</td><td class="valor">' + formatarMoeda(lojas[l].total) + '</td></tr>';
             });
             html += '</tbody></table>';
             
-            document.getElementById('modal-titulo').textContent = '🏪 ' + regional;
+            document.getElementById('modal-titulo').textContent = '👤 ' + regional;
             document.getElementById('modal-body').innerHTML = html;
             document.getElementById('modal-overlay').classList.add('ativo');
         }
         
         function abrirModalLoja(loja) {
             var dados = dadosFiltrados.filter(function(item) { return item['Loja'] === loja; });
+            var totalGeral = dados.reduce(function(s, i) { return s + (parseFloat((i['ValorVale'] || '0').toString().replace(',', '.')) || 0); }, 0);
             
-            var html = '<h3>' + loja + ' - ' + dados.length + ' vales</h3><br>';
+            var html = '<h3>📋 ' + loja + ' - ' + dados.length + ' vales</h3><br>';
             html += '<table><thead><tr><th>Hora</th><th>Regional</th><th>Data</th><th>Crachá</th><th>Motivo</th><th>Tipo Falha</th><th>Valor</th></tr></thead><tbody>';
             dados.forEach(function(item) {
                 html += '<tr>';
@@ -192,10 +214,10 @@
                 html += '<td class="valor">' + formatarMoeda(parseFloat((item['ValorVale'] || '0').toString().replace(',', '.')) || 0) + '</td>';
                 html += '</tr>';
             });
-            html += '<tr style="font-weight:bold;background:#e6f0ff;"><td colspan="6">TOTAL</td><td class="valor">' + formatarMoeda(dados.reduce(function(s, i) { return s + (parseFloat((i['ValorVale'] || '0').toString().replace(',', '.')) || 0); }, 0)) + '</td></tr>';
+            html += '<tr style="font-weight:bold;background:#e6f0ff;"><td colspan="6">TOTAL</td><td class="valor">' + formatarMoeda(totalGeral) + '</td></tr>';
             html += '</tbody></table>';
             
-            document.getElementById('modal-titulo').textContent = '📋 ' + loja;
+            document.getElementById('modal-titulo').textContent = '🏪 ' + loja;
             document.getElementById('modal-body').innerHTML = html;
             document.getElementById('modal-overlay').classList.add('ativo');
         }
@@ -259,14 +281,14 @@
             
             var html = '<table><thead><tr><th>Regional</th><th>QTD</th><th>Valor Total</th></tr></thead><tbody>';
             Object.keys(porRegional).sort().forEach(function(r) {
-                html += '<tr><td><span class="clicavel" onclick="abrirModalRegional(\'' + r + '\')">' + r + '</span></td><td>' + porRegional[r].qtd + '</td><td class="valor">' + formatarMoeda(porRegional[r].total) + '</td></tr>';
+                html += '<tr><td><span class="clicavel" onclick="abrirModalRegional(\'' + r.replace(/'/g, "\\'") + '\')">' + r + '</span></td><td>' + porRegional[r].qtd + '</td><td class="valor">' + formatarMoeda(porRegional[r].total) + '</td></tr>';
             });
             html += '<tr style="font-weight:bold;background:#e6f0ff;"><td>TOTAL</td><td>' + totalQtd + '</td><td class="valor">' + formatarMoeda(totalValor) + '</td></tr></tbody></table>';
             document.getElementById('tabela-resumo').innerHTML = html;
             
             html = '<table><thead><tr><th>Loja</th><th>QTD</th><th>Valor Total</th></tr></thead><tbody>';
             Object.keys(porLoja).sort().forEach(function(l) {
-                html += '<tr><td><span class="clicavel" onclick="abrirModalLoja(\'' + l + '\')">' + l + '</span></td><td>' + porLoja[l].qtd + '</td><td class="valor">' + formatarMoeda(porLoja[l].total) + '</td></tr>';
+                html += '<tr><td><span class="clicavel" onclick="abrirModalLoja(\'' + l.replace(/'/g, "\\'") + '\')">' + l + '</span></td><td>' + porLoja[l].qtd + '</td><td class="valor">' + formatarMoeda(porLoja[l].total) + '</td></tr>';
             });
             html += '<tr style="font-weight:bold;background:#e6f0ff;"><td>TOTAL</td><td>' + totalQtd + '</td><td class="valor">' + formatarMoeda(totalValor) + '</td></tr></tbody></table>';
             document.getElementById('tabela-loja').innerHTML = html;
