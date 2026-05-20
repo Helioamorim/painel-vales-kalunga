@@ -223,17 +223,38 @@ function filtrarCobranca(){
     var rf=document.getElementById('cob-filtro-regional').value;
     var lf=document.getElementById('cob-filtro-loja').value;
     
-    // Converter datas do formato BR (dd/mm/yyyy) para Date
-    function convDataBR(str){if(!str)return null;var p=str.split('/');return new Date(p[2],p[1]-1,p[0]);}
+    // Função para converter data em qualquer formato para Date
+    function convData(val){
+        if(!val)return null;
+        // Se for número (serial Excel)
+        if(!isNaN(val)&&typeof val==='number')return new Date((val-25569)*86400*1000);
+        if(!isNaN(val)&&typeof val==='string'&&!val.includes('/'))return new Date((parseFloat(val)-25569)*86400*1000);
+        // Se for string dd/mm/yyyy
+        var p=val.toString().split('/');
+        if(p.length===3)return new Date(p[2],p[1]-1,p[0]);
+        return null;
+    }
     
-    if(ini){var di=new Date(ini);d=d.filter(i=>{var dm=convDataBR(i['DT_MOV']);return dm&&dm>=di;});}
-    if(fim){var df=new Date(fim);d=d.filter(i=>{var dm=convDataBR(i['DT_MOV']);return dm&&dm<=df;});}
+    if(ini){var di=new Date(ini+'T00:00:00');d=d.filter(i=>{var dm=convData(i['DT_MOV']);return dm&&dm>=di;});}
+    if(fim){var df=new Date(fim+'T23:59:59');d=d.filter(i=>{var dm=convData(i['DT_MOV']);return dm&&dm<=df;});}
     if(rf!=='')d=d.filter(i=>i['Regional']===rf);
     if(lf!=='')d=d.filter(i=>i['Loja']===lf);
     
     // Normalizar valores
     function nv(v){if(!v)return 0;if(typeof v==='number')return v;return parseFloat(v.toString().replace(/\./g,'').replace(',','.'));}
     d.forEach(i=>{i.ValorNum=nv(i['Valor']);i.DiasNum=parseInt(i['Dias_Atraso'])||0;});
+    
+    // Se não tem dados, mostrar vazio
+    if(d.length===0){
+        document.getElementById('tabela-cobranca').innerHTML='<p style="text-align:center;padding:20px;">Nenhum resultado encontrado.</p>';
+        document.getElementById('cob-total-qtd').textContent='0';
+        document.getElementById('cob-total-valor').textContent='R$ 0,00';
+        document.getElementById('cob-top-qtd').innerHTML='<tr><td colspan="2">-</td></tr>';
+        document.getElementById('cob-top-atraso').innerHTML='<tr><td colspan="2">-</td></tr>';
+        document.getElementById('cob-corpo-periodo').innerHTML='';
+        document.getElementById('cob-tabela-ultima').innerHTML='';
+        return;
+    }
     
     // Agrupar por loja
     var porLoja={};d.forEach(i=>{var l=i['Loja'];if(!porLoja[l])porLoja[l]={qtd:0,valor:0,dias:0,regional:i['Regional']};porLoja[l].qtd++;porLoja[l].valor+=i.ValorNum;if(i.DiasNum>porLoja[l].dias)porLoja[l].dias=i.DiasNum;});
@@ -248,25 +269,20 @@ function filtrarCobranca(){
     document.getElementById('cob-total-qtd').textContent=lojasArr.length;
     document.getElementById('cob-total-valor').textContent=fm(tv);
     
-    // Top 10 Qtd
+    // Top 10
     var top=lojasArr.slice(0,10);var h2='';top.forEach(([l,i])=>{h2+='<tr><td><span class="clicavel" onclick="abrirModalCobranca(\''+l+'\')">'+l+'</span></td><td>'+i.qtd+'</td></tr>';});document.getElementById('cob-top-qtd').innerHTML=h2||'<tr><td colspan="2">-</td></tr>';
-    
-    // Top 10 Atraso
     var topAt=Object.entries(porLoja).sort((a,b)=>b[1].dias-a[1].dias).slice(0,10);var h3='';topAt.forEach(([l,i])=>{h3+='<tr><td><span class="clicavel" onclick="abrirModalCobranca(\''+l+'\')">'+l+'</span></td><td>'+i.dias+' dias</td></tr>';});document.getElementById('cob-top-atraso').innerHTML=h3||'<tr><td colspan="2">-</td></tr>';
     
-    // Concentração de atrasos por período
+    // Concentração
     var periodos={"01-07":0,"08-14":0,"15-21":0,"22-31":0};
-    d.forEach(i=>{var dia=parseInt(i['Data_Cobranca'].split('/')[0]);if(dia<=7)periodos["01-07"]++;else if(dia<=14)periodos["08-14"]++;else if(dia<=21)periodos["15-21"]++;else periodos["22-31"]++;});
+    d.forEach(i=>{var dia=parseInt(i['Data_Cobranca'].toString().split('/')[0]);if(dia<=7)periodos["01-07"]++;else if(dia<=14)periodos["08-14"]++;else if(dia<=21)periodos["15-21"]++;else periodos["22-31"]++;});
     var total=d.length||1;var h4='';Object.entries(periodos).forEach(([p,q])=>{var perc=(q/total)*100;h4+='<tr><td>'+p+'</td><td>'+q+'</td><td>'+perc.toFixed(1)+'%</td></tr>';});document.getElementById('cob-corpo-periodo').innerHTML=h4;
     
     // Última cobrança
-    var maiorData=null;d.forEach(i=>{var dc=convDataBR(i['Data_Cobranca']);if(dc&&(!maiorData||dc>maiorData))maiorData=dc;});
-    if(maiorData){document.getElementById('cob-data-ultima').textContent='Data: '+maiorData.toLocaleDateString('pt-BR');var ult=d.filter(i=>convDataBR(i['Data_Cobranca'])?.getTime()===maiorData.getTime());var h5='';ult.forEach(i=>{h5+='<tr><td>'+i['Loja']+'</td><td>'+i['Data_Cobranca']+'</td><td>'+i['DT_MOV']+'</td><td class="valor">'+fm(i.ValorNum)+'</td><td>'+i['Data_Vencimento']+'</td></tr>';});document.getElementById('cob-tabela-ultima').innerHTML=h5;}
+    var maiorData=null;d.forEach(i=>{var dc=convData(i['Data_Cobranca']);if(dc&&(!maiorData||dc>maiorData))maiorData=dc;});
+    if(maiorData){document.getElementById('cob-data-ultima').textContent='Data: '+maiorData.toLocaleDateString('pt-BR');var ult=d.filter(i=>convData(i['Data_Cobranca'])?.getTime()===maiorData.getTime());var h5='';ult.forEach(i=>{h5+='<tr><td>'+i['Loja']+'</td><td>'+i['Data_Cobranca']+'</td><td>'+i['DT_MOV']+'</td><td class="valor">'+fm(i.ValorNum)+'</td><td>'+i['Data_Vencimento']+'</td></tr>';});document.getElementById('cob-tabela-ultima').innerHTML=h5;}
     
-    // Data atualização
-    if(maiorData)document.getElementById('cob-data-atualizacao').textContent='Atualizado em: '+maiorData.toLocaleDateString('pt-BR');
-    
-    // Atualizar dropdowns
+    document.getElementById('cob-data-atualizacao').textContent=maiorData?'Atualizado em: '+maiorData.toLocaleDateString('pt-BR'):'';
     popularDropdownCob();
 }
 
@@ -296,16 +312,13 @@ function abrirModalCobranca(loja){
     if(tipoAcesso==='regional')d=d.filter(i=>i['Regional']===usuarioAtual);
     function nv(v){if(!v)return 0;if(typeof v==='number')return v;return parseFloat(v.toString().replace(/\./g,'').replace(',','.'));}
     d.forEach(i=>{i.ValorNum=nv(i['Valor']);});
-    d.sort((a,b)=>{var da=a['Data_Cobranca'].split('/');var db=b['Data_Cobranca'].split('/');return new Date(db[2],db[1]-1,db[0])-new Date(da[2],da[1]-1,da[0]);});
+    d.sort((a,b)=>{var da=a['Data_Cobranca'].toString().split('/');var db=b['Data_Cobranca'].toString().split('/');return new Date(db[2],db[1]-1,db[0])-new Date(da[2],da[1]-1,da[0]);});
     var tv=d.reduce((s,i)=>s+i.ValorNum,0);
     var h='<h3>📋 '+loja+' - '+d.length+' cobranças</h3><br><table><thead><tr><th>Data Cobrança</th><th>DT Mov</th><th>Valor</th><th>Vencimento</th><th>Dias Atraso</th></tr></thead><tbody>';
     d.forEach(i=>{h+='<tr><td>'+i['Data_Cobranca']+'</td><td>'+i['DT_MOV']+'</td><td class="valor">'+fm(i.ValorNum)+'</td><td>'+i['Data_Vencimento']+'</td><td>'+(i['Dias_Atraso']||0)+'</td></tr>';});
     h+='<tr style="font-weight:bold;background:#e6f0ff;"><td colspan="4">TOTAL</td><td class="valor">'+fm(tv)+'</td></tr></tbody></table>';
-    document.getElementById('modal-titulo').textContent='🏪 '+loja;
-    document.getElementById('modal-body').innerHTML=h;
-    document.getElementById('modal-overlay').classList.add('ativo');
+    document.getElementById('modal-titulo').textContent='🏪 '+loja;document.getElementById('modal-body').innerHTML=h;document.getElementById('modal-overlay').classList.add('ativo');
 }
-
 function popularDropdownLojaCob(){var s=document.getElementById('cob-filtro-loja');s.innerHTML='<option value="todos">Todas</option>';var d=dadosBoletos;if(tipoAcesso==='regional')d=d.filter(i=>i['Regional']===usuarioAtual);else if(tipoAcesso==='loja')d=d.filter(i=>i['Loja']===usuarioAtual);var ld=[...new Set(d.map(i=>i['Loja']))].sort();ld.forEach(l=>{var o=document.createElement('option');o.value=l;o.textContent=l;s.appendChild(o);});}
 
 // ============ LOGIN ============
