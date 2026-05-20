@@ -192,39 +192,37 @@ function setTipo(tipo,btn){
 
 function getStatus(dv,hs){
     if(!dv)return{texto:'Sem data',classe:''};
-    var d=new Date((parseInt(dv)-25569)*86400*1000);
+    var n=parseInt(dv);
+    var d=new Date((n-25569)*86400*1000);
     var s=hs?new Date((parseFloat(hs)-25569)*86400*1000):null;
     if(d>hoje)return{texto:'🔵 Data futura',classe:'status-futuro'};
     
     var dia=d.getDate(),mes=d.getMonth(),ano=d.getFullYear();
+    var mesRef,anoRef;
+    if(dia>=21){mesRef=mes+1;anoRef=ano;if(mesRef>11){mesRef=0;anoRef++;}}
+    else{mesRef=mes;anoRef=ano;}
     
-    // Se dia >= 21, o período de referência é o MÊS SEGUINTE
-    // Se dia <= 20, o período de referência é o MÊS ATUAL
-    var mesRef, anoRef;
-    if(dia>=21){
-        mesRef=mes+1; // mês seguinte
-        anoRef=ano;
-        if(mesRef>11){mesRef=0;anoRef++;}
-    }else{
-        mesRef=mes;
-        anoRef=ano;
-    }
+    // Usar Date.UTC para evitar problemas de fuso
+    var ini=new Date(Date.UTC(anoRef,mesRef-1,21));
+    var fim=new Date(Date.UTC(anoRef,mesRef,20,23,59,59));
+    var lim=new Date(Date.UTC(anoRef,mesRef,23,23,59,59));
     
-    // Período: 21 do mês anterior a mesRef até 20 de mesRef
-    var ini=new Date(anoRef,mesRef-1,21);
-    var fim=new Date(anoRef,mesRef,20);
-    // Limite de solicitação: dia 23 de mesRef
-    var lim=new Date(anoRef,mesRef,23);
+    // Criar data UTC para comparação
+    var dUtc=new Date(Date.UTC(ano,mes,dia));
     
-    // Depuração no console
-    console.log('Vale:'+d.toLocaleDateString('pt-BR')+' | Solic:'+(s?s.toLocaleDateString('pt-BR'):'N/A')+' | Período:'+ini.toLocaleDateString('pt-BR')+' a '+fim.toLocaleDateString('pt-BR')+' | Limite:'+lim.toLocaleDateString('pt-BR'));
-    
-    if(d<ini||d>fim)return{texto:'🔴 Fora do período ('+ini.toLocaleDateString('pt-BR')+' a '+fim.toLocaleDateString('pt-BR')+')',classe:'status-fora'};
+    if(dUtc<ini||dUtc>fim)return{texto:'🔴 Fora do período ('+ini.toLocaleDateString('pt-BR')+' a '+fim.toLocaleDateString('pt-BR')+')',classe:'status-fora'};
     if(s&&s>lim)return{texto:'🟡 Fora do prazo (após '+lim.toLocaleDateString('pt-BR')+')',classe:'status-atraso'};
     return{texto:'🟢 Dentro do prazo',classe:'status-ok'};
 }
 
-function edh(n){if(!n)return'';var f=parseFloat(n);if(isNaN(f))return'';f-=(3/24);var d=new Date((f-25569)*86400*1000);return d.toLocaleDateString('pt-BR')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+function ed(n){
+    if(!n)return '';
+    var x=parseInt(n);
+    if(isNaN(x))return n;
+    var d=new Date((x-25569)*86400*1000);
+    // Usar toLocaleDateString para pegar a data local correta
+    return d.toLocaleDateString('pt-BR');
+}
 function ed(n){if(!n)return'';var x=parseInt(n);if(isNaN(x))return n;var d=new Date((x-25569)*86400*1000);return d.toLocaleDateString('pt-BR');}
 function fm(v){return'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function gp(m){if(m==='todos')return null;var p=m.split('-'),a=parseInt(p[0]),mo=parseInt(p[1]);return{inicio:new Date(a,mo-2,21),fim:new Date(a,mo-1,20)};}
