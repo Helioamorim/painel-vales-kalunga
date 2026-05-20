@@ -113,7 +113,65 @@ let usuarioAtual=null,tipoAcesso='loja',dadosFiltrados=[];
 const hoje=new Date();hoje.setHours(0,0,0,0);
 const regionais=[...new Set(dadosBrutos.map(i=>i['Regional']).filter(Boolean))].sort();
 const lojas=[...new Set(dadosBrutos.map(i=>i['Loja']).filter(Boolean))].sort();
-
+// ⬇️ COLE O mapaFilial AQUI ⬇️
+const mapaFilial = {
+'0003':'0003-SP-SPO-Ipiranga','0007':'0007-SP-SPO-Lapa','0008':'0008-SP-SPO-Tuiuti','0009':'0009-SP-SPO-R.Iguatemi',
+'0010':'0010-SP-SPO-Pompeia','0011':'0011-SP-SPO-S.Trimais','0013':'0013-SP-SPO-V.Mariana','0015':'0015-SP-SBC-Jurubatuba',
+'0016':'0016-SP-CAM-A.Neves','0017':'0017-SP-SPO-S.Amaro','0019':'0019-SP-GRU-AnieloPratici','0020':'0020-SP-STA-Av.Industrial',
+'0021':'0021-SP-RIB-Centro','0022':'0022-SP-SPO-Moema','0023':'0023-SP-SPO-Vergueiro','0024':'0024-RJ-RIO-S.NovaAmerica',
+'0025':'0025-SP-SPO-ItaAvJPessego','0026':'0026-SP-SPO-Santana','0027':'0027-RJ-RIO-Centro','0028':'0028-GO-GO-GoianiaJdGoias',
+'0029':'0029-SP-BAU-S.Bauru','0030':'0030-SP-SPO-S.Aricanduva','0031':'0031-SP-SPO-Paulista','0032':'0032-SP-SPO-S.MarketPlace',
+'0033':'0033-SP-SPO-Fco.Morato','0034':'0034-MG-BHZ-Savassi','0035':'0035-SP-BAU-EzequielRamos','0036':'0036-SP-SBC-Mal.Deodoro',
+'0037':'0037-SP-TAB-Taboao','0038':'0038-SP-SPO-S.Interlagos','0040':'0040-SP-BAR-Araguaia','0041':'0041-SP-SJR-Centro',
+'0042':'0042-RJ-RIO-S.ViaParque','0043':'0043-SP-SPO-S.Cantareira','0044':'0044-RJ-RIO-S.Madureira','0045':'0045-SP-SPO-S.Penha',
+'0046':'0046-SP-PIR-S.Piracicaba','0047':'0047-SP-SPO-Leopoldina','0049':'0049-SP-SJC-N.DÁvila','0050':'0050-PR-CTB-S.Estação',
+'0051':'0051-SP-SOR-GalCarneiro','0052':'0052-SP-MAR-Centro','0053':'0053-PR-CTB-Seminário','0054':'0054-RJ-NIG-NiloPeçanha',
+'0055':'0055-SP-CAM-S.Iguatemi','0056':'0056-SP-SPO-A.Pinheiro','0057':'0057-SP-SPO-V.Maria','0058':'0058-RJ-RIO-S.Bangu',
+'0059':'0059-DF-BRA-Com.Norte','0060':'0060-SP-SPO-Freguesia','0061':'0061-SP-SPO-V.Guilherme','0062':'0062-SP-MAU-S.Maua Plaza',
+'0063':'0063-SP-JAC-S.Jacareí','0064':'0064-SP-SPO-LiberoBadaro','0065':'0065-SP-MOG-Mogi','0066':'0066-SP-DIA-S.PraçadaMoça',
+'0067':'0067-SP-OSA-S.União','0068':'0068-SP-SPO-SantaCatarina','0069':'0069-SP-COT-GranjaViana','0070':'0070-SP-IND-S.Polo',
+'0071':'0071-SP-SCS-Sao Caetano','0072':'0072-RJ-SGO-S.SãoGonçalo','0073':'0073-SP-RIB-S.NovoShop','0074':'0074-RJ-RIO-Guanab.Barra',
+'0075':'0075-RJ-SJM-S.GrandeRio','0076':'0076-SP-SPO-Sao Miguel','0077':'0077-SP-SUZ-S.Suzano','0078':'0078-SP-SOR-DomAguirre',
+'0079':'0079-SP-SPO-N.Cantareira','0080':'0080-SC-BLU-S.Norte','0081':'0081-RJ-RIO-S.Boulevard','0082':'0082-RS-POA-S.PraiaBelas',
+'0083':'0083-SP-PGR-S.Litoral','0084':'0084-SP-SPO-S.Eldorado','0085':'0085-SP-SPO-S.Mooca','0086':'0086-RJ-NIT-S.Niteroi',
+'0087':'0087-SP-GUA-Adhem.Barros','0088':'0088-SP-LIM-S.PátioLimeir','0090':'0090-SC-JOI-S.Garten','0091':'0091-SP-SPO-Alvarenga',
+'0092':'0092-MG-BHZ-S.Boulevard','0093':'0093-SP-SPO-V.Formosa','0094':'0094-SP-BAR-S.ParkBarueri','0095':'0095-MG-JDF-S.JardimNorte',
+'0096':'0096-SP-BAR-S.Iguatemi','0097':'0097-SP-RCL-S.RioClaro','0098':'0098-SP-STB-S.Tivoli','0099':'0099-SP-JUN-Jundiaí',
+'0100':'0100-SP-SCA-Sao Carlos','0102':'0102-RJ-SGO-S.Boulevard','0103':'0103-RJ-RIO-S.Carioca','0104':'0104-SP-SBC-S. SB. Plaza',
+'0105':'0105-PE-REC-S.Riomar','0106':'0106-PR-PTG-S.Palladium','0107':'0107-MG-UBL-S Center','0108':'0108-RJ-CBF-S.ParkLagos',
+'0109':'0109-BA-SAL-S.BelaVista','0110':'0110-PR-LON-S.Londrina','0111':'0111-SP-SPO-S.Itaquera','0112':'0112-SP-SPO-MariaAntônia',
+'0113':'0113-MG-UBE-S.Uberaba','0114':'0114-SP-RIB-S.Iguatemi','0115':'0115-RJ-DCX-S.DCaxias','0116':'0116-RJ-RIO-Copacabana',
+'0117':'0117-RJ-RIO-S.Sulacap','0118':'0118-SP-SOR-S.Esplanada','0119':'0119-SP-STA-S. ABC','0120':'0120-DF-TAG-S.Taguat',
+'0121':'0121-RJ-GOY-S.Goytacazes','0122':'0122-RJ-RIO-S.Metrop.Barr','0123':'0123-MG-BHZ-BarroPreto','0124':'0124-SP-SPO-Giov.Gronchi',
+'0125':'0125-SP-GRU-P.Faccini','0126':'0126-RJ-RIO-S.CampoGrande','0127':'0127-RJ-RIO-FashionMall','0128':'0128-SP-SPO-Morumbi',
+'0130':'0130-SP-SPO-S.Tiete','0131':'0131-SP-SJR-S.Iguatemi','0132':'0132-MG-CON-S.Contagem','0133':'0133-RJ-RIO-S.Americas',
+'0134':'0134-MG-JDF-S.Independ','0135':'0135-SP-SOR-S.PatioCiane','0136':'0136-SP-OSA-PedroFioreti','0137':'0137-ES-VIV-S.Vila Velha',
+'0138':'0138-SP-SPO-S.VilaOlimpia','0139':'0139-SP-ARA-Araraquara','0140':'0140-SC-FLO-S.Continente','0141':'0141-SC-BLU-S.Neumarkt',
+'0142':'0142-RJ-RIO-S.Norte','0143':'0143-SC-BCA-Camboriú','0145':'0145-SP-TAU-S.Taubaté','0146':'0146-DF-BRA-S ID',
+'0147':'0147-CE-FOR-S.Riomar','0148':'0148-SP-ARA-S.PraçaNova','0149':'0149-MG-BHZ-S.Del Rey','0150':'0150-RJ-VRD-S.VRedonda',
+'0151':'0151-SP-SPO-AvDePinedo','0152':'0152-CE-FOR-S.Iguatemi','0153':'0153-RJ-ANG-S.Piratas','0154':'0154-SP-CAM-S.Bandeiras',
+'0155':'0155-SP-PRU-Pres.Prudente','0156':'0156-RJ-RIO-BarraShopping','0157':'0157-RS-POA-S.Iguatemi','0158':'0158-PE-REC-S.Recife',
+'0159':'0159-RS-POA-S.BarraSul','0161':'0161-RJ-NIG-S.NovaIguaçu','0162':'0162-SP-SPO-AvPaulista','0163':'0163-RJ-RIO-S.West',
+'0164':'0164-BA-SAL-S.Bahia','0165':'0165-SP-SBC-S.Golden','0166':'0166-CE-FOR-S.Kennedy','0167':'0167-GO-GOI-S.Buritis',
+'0168':'0168-PE-CAR-S.Caruaru','0169':'0169-RS-CXS-S.CaxiasSul','0170':'0170-DF-BRA-S.Venancio','0171':'0171-RJ-RIO-S.Via Brasil',
+'0172':'0172-SP-SJC-S.CenterValle','0173':'0173-SP-SPO-S.SPMarket','0174':'0174-SP-SPO-S.Pamplona','0175':'0175-SP-ITU-S.Itu',
+'0176':'0176-MT-CGB-S.Pantanal','0178':'0178-ES-CAR-S.Moxuara','0179':'0179-BA-SAL-S.Salvador','0181':'0181-RN-NAT-S.Natal',
+'0182':'0182-RN-NAT-S.Midway','0183':'0183-SE-ARA-S.Aracaju','0184':'0184-SP-MOG-S.MogiBuriti','0185':'0185-PE-REC-S.Tacaruna',
+'0186':'0186-ES-VIT-S.Vitória','0187':'0187-RS-CAN-S.Canoas','0188':'0188-PR-LON-S.Catuai','0189':'0189-SP-GRU-S.Maia',
+'0190':'0190-SP-SPO-W.Luis','0191':'0191-PR-MAR-S.Catuai','0192':'0192-PE-OLI-S.Olinda','0193':'0193-AL-MAC-S.PatioMaceio',
+'0194':'0194-PB-CGR-C.Grande','0195':'0195-SP-SPO-F.Coutinho','0196':'0196 - SP-SPO-RicardoJafet','0197':'0197-PB-JPA-Mangabeira',
+'0198':'0198-PB-JPA-Manaira','0199':'0199-SP-SPO-JabaquaraBra','0200':'0200-SP-SPO-RadialMooca','0201':'0201-MT-CGB-S.Cuiaba',
+'0202':'0202-RO-PVH-S.PortoVelho','0203':'0203-SP-SPO-Av.Rudge','0204':'0204-CE-FOR-S.JoqueiNorth','0206':'0206-PR-CTB-S.Palladium',
+'0207':'0207-GO-GOI-GoianiaBueno','0208':'0208-MA-SLZ-S.Ilha','0209':'0209-RS-PFD-S.PFundo','0210':'0210-BA-VDC-S.V.Conquista',
+'0211':'0211-BA-SAL-S.Paralela','0212':'0212-SP-SPO-S.FCaneca','0213':'0213-SP-PRU-S.PrudenShop','0214':'0214-AL-MAC-Pq.ShopMaceio',
+'0215':'0215 - RN-NAT-Tirol','0216':'0216-RS-PLT-S.Pelotas','0217':'0217-RJ-RIO-TijucaExtra','0218':'0218-RJ-RIO-S.Jacarepagua',
+'0219':'0219-PR-CTB-S.Jockey','0220':'0220-SP-MOG-S.Mogi','0221':'0221-PA-BEL-S.GraoPara','0222':'0222-RJ-MAC-S.MacaePlaza',
+'0223':'0223-PI-TER-S.RioPoty','0224':'0224-SP-SUM-S.Sumare','0225':'0225-PA-ANA-S.Ananindeua','0226':'0226-BA-ITA-S.Jequitiba',
+'0227':'0227-SP-CAM-Gal.Campinas','0228':'0228-GO-ANA-S.Anapolis','0231':'0231-DF-BRA-S.Iguatemi','0232':'0232-SE-ARA-S.JdAracaju',
+'0234':'0234-MA-SLZ-S.RioAnil','0235':'0235-RS-RIG-S.RioGrande','0236':'0236-SP-SAN-AvAnaCosta','0238':'0238-BA-LFR-Pq.ShopBahia',
+'0239':'0239-SC-SJO-S.Itaguaçu','0241':'0241-SC-CHA-S.Chapeco','0242':'0242-SP-ASS-Assis','0243':'0243-SP-SPO-MateoBei',
+'0244':'0244-MG-BHZ-S.Estação','0245':'0245-SP-CAM-S.Campinas','0246':'0246-RJ-RIO-Botafogo'
+};
 function setTipo(tipo,btn){
     tipoAcesso=tipo;
     document.querySelectorAll('.tipo-btn').forEach(b=>b.classList.remove('ativo'));
@@ -212,6 +270,7 @@ function popularDropdownLoja(){var s=document.getElementById('filtro-loja');s.in
 
 function fazerLogin(){
     var v=document.getElementById('login-select').value;
+    if(tipoAcesso==='loja'){v=mapaFilial[v]||v;}
     var s=document.getElementById('login-senha').value;
     if(!v){document.getElementById('login-erro').style.display='block';return;}
     var sc=(tipoAcesso==='admin')?SENHA_ADMIN:SENHA;
