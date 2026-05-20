@@ -90,7 +90,7 @@
         <h1>Portal Kalunga</h1>
         <p>Acesse seu painel de controle</p>
         <select id="login-regional">
-            <option value="">Selecione seu regional...</option>
+            <option value="">Selecione o regional...</option>
             <option value="Agnaldo Costa">Agnaldo Costa</option>
             <option value="Adriano Lazarini">Adriano Lazarini</option>
             <option value="Aloisio Miranda">Aloisio Miranda</option>
@@ -282,14 +282,17 @@
         return String(horas).padStart(2,'0') + ':' + String(minutos).padStart(2,'0');
     }
     
-    function excelParaDataHora(dataNum, horaNum) {
-        var data = excelParaData(dataNum);
-        var hora = excelParaHora(horaNum);
-        if (data && hora) return data + ' ' + hora;
-        if (data) return data;
-        if (hora) return hora;
-        return '';
-    }
+    function excelParaDataHora(dataNum) {
+    if (!dataNum) return '';
+    var n = parseFloat(dataNum);
+    if (isNaN(n)) return '';
+    // Subtrai 3 horas (3/24 = 0.125) para corrigir fuso horário
+    n = n - (3/24);
+    var d = new Date((n - 25569) * 86400 * 1000);
+    return d.toLocaleDateString('pt-BR') + ' ' + 
+           String(d.getHours()).padStart(2,'0') + ':' + 
+           String(d.getMinutes()).padStart(2,'0');
+}
     
     function formatarMoeda(valor) {
         return 'R$ ' + valor.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -311,7 +314,7 @@
         html += '<table><thead><tr><th>Data/Hora</th><th>Crachá</th><th>Motivo</th><th>Tipo Falha</th><th>Valor</th></tr></thead><tbody>';
         dados.forEach(function(item) {
             html += '<tr>';
-            html += '<td>' + excelParaDataHora(item['DataVale'], item['HoraInicio']) + '</td>';
+            html += '<td>' + excelParaDataHora(item['HoraInicio']) + '</td>';
             html += '<td>' + (item['Cracha'] || '') + '</td>';
             html += '<td>' + (item['Motivo'] || '') + '</td>';
             html += '<td>' + (item['TipoFalha'] || '') + '</td>';
@@ -398,7 +401,7 @@
         
         html = '<table><thead><tr><th>Loja</th><th>Data/Hora</th><th>Motivo</th><th>Valor</th></tr></thead><tbody>';
         dados.forEach(function(item) {
-            html += '<tr><td>' + (item['Loja'] || '') + '</td><td>' + excelParaDataHora(item['DataVale'], item['HoraInicio']) + '</td><td>' + (item['Motivo'] || '') + '</td><td class="valor">' + formatarMoeda(parseFloat((item['ValorVale'] || '0').toString().replace(',', '.')) || 0) + '</td></tr>';
+            html += '<tr><td>' + (item['Loja'] || '') + '</td><td>' + excelParaDataHora(item['HoraInicio']) + '</td><td>' + (item['Motivo'] || '') + '</td><td class="valor">' + formatarMoeda(parseFloat((item['ValorVale'] || '0').toString().replace(',', '.')) || 0) + '</td></tr>';
         });
         html += '</tbody></table>';
         document.getElementById('tabela-base').innerHTML = html;
