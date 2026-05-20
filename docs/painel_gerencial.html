@@ -195,8 +195,8 @@ function abrirApp(app){
     document.getElementById('tela-cobranca').style.display=app==='cobranca'?'block':'none';
     document.getElementById('topbar-titulo').textContent=app==='vales'?'📊 Painel de Vales':'💰 Cobrança de Boletos';
     toggleMenu();
-    if(app==='vales')aplicarFiltros();
-    else filtrarCobranca();
+   if(app==='vales'){aplicarFiltros();}
+else{filtrarCobranca();popularDropdownCob();}
 }
 
 // ============ VALES ============
@@ -319,10 +319,10 @@ function abrirModalCobranca(loja){
     h+='<tr style="font-weight:bold;background:#e6f0ff;"><td colspan="4">TOTAL</td><td class="valor">'+fm(tv)+'</td></tr></tbody></table>';
     document.getElementById('modal-titulo').textContent='🏪 '+loja;document.getElementById('modal-body').innerHTML=h;document.getElementById('modal-overlay').classList.add('ativo');
 }
-function popularDropdownLojaCob(){var s=document.getElementById('cob-filtro-loja');s.innerHTML='<option value="todos">Todas</option>';var d=dadosBoletos;if(tipoAcesso==='regional')d=d.filter(i=>i['Regional']===usuarioAtual);else if(tipoAcesso==='loja')d=d.filter(i=>i['Loja']===usuarioAtual);var ld=[...new Set(d.map(i=>i['Loja']))].sort();ld.forEach(l=>{var o=document.createElement('option');o.value=l;o.textContent=l;s.appendChild(o);});}
+
 
 // ============ LOGIN ============
-function autoLogin(){var u=localStorage.getItem('kalunga_usuario');var t=localStorage.getItem('kalunga_tipo');if(u&&t){tipoAcesso=t;usuarioAtual=u;document.getElementById('login-screen').style.display='none';document.getElementById('app-screen').style.display='block';document.getElementById('menu-usuario').textContent=(tipoAcesso==='loja'?'🏪 ':'👤 ')+u;document.getElementById('header-info').textContent=(tipoAcesso==='loja'?'Loja: ':'Regional: ')+u;document.getElementById('header-info-cob').textContent=(tipoAcesso==='loja'?'Loja: ':'Regional: ')+u;if(tipoAcesso==='regional'){document.getElementById('filtro-loja-container').style.display='';popularDropdownLoja();}if(tipoAcesso==='loja'){document.getElementById('tab-loja').style.display='none';document.getElementById('card-lojas').style.display='none';}popularDropdownLojaCob();if(appAtual==='vales')aplicarFiltros();else filtrarCobranca();}}
+function autoLogin(){var u=localStorage.getItem('kalunga_usuario');var t=localStorage.getItem('kalunga_tipo');if(u&&t){tipoAcesso=t;usuarioAtual=u;document.getElementById('login-screen').style.display='none';document.getElementById('app-screen').style.display='block';document.getElementById('menu-usuario').textContent=(tipoAcesso==='loja'?'🏪 ':'👤 ')+u;document.getElementById('header-info').textContent=(tipoAcesso==='loja'?'Loja: ':'Regional: ')+u;document.getElementById('header-info-cob').textContent=(tipoAcesso==='loja'?'Loja: ':'Regional: ')+u;if(tipoAcesso==='regional'){document.getElementById('filtro-loja-container').style.display='';popularDropdownLoja();}if(tipoAcesso==='loja'){document.getElementById('tab-loja').style.display='none';document.getElementById('card-lojas').style.display='none';}popularDropdownCob();if(appAtual==='vales')aplicarFiltros();else filtrarCobranca();}}
 
 function fazerLogin(){var v=document.getElementById('login-select').value;if(tipoAcesso==='loja'){v=mapaFilial[v]||v;}var s=document.getElementById('login-senha').value;if(!v){document.getElementById('login-erro').style.display='block';return;}var sc=(tipoAcesso==='admin')?SENHA_ADMIN:SENHA;if(s===sc){usuarioAtual=v;document.getElementById('login-screen').style.display='none';document.getElementById('app-screen').style.display='block';document.getElementById('menu-usuario').textContent=(tipoAcesso==='loja'?'🏪 ':'👤 ')+v;document.getElementById('header-info').textContent=(tipoAcesso==='loja'?'Loja: ':'Regional: ')+v;document.getElementById('header-info-cob').textContent=(tipoAcesso==='loja'?'Loja: ':'Regional: ')+v;if(tipoAcesso==='regional'){document.getElementById('filtro-loja-container').style.display='';popularDropdownLoja();}else{document.getElementById('filtro-loja-container').style.display='none';}if(tipoAcesso==='loja'){document.getElementById('tab-loja').style.display='none';document.getElementById('card-lojas').style.display='none';}else{document.getElementById('tab-loja').style.display='';document.getElementById('card-lojas').style.display='';}popularDropdownLojaCob();localStorage.setItem('kalunga_usuario',v);localStorage.setItem('kalunga_tipo',tipoAcesso);if(appAtual==='vales')aplicarFiltros();else filtrarCobranca();}else{document.getElementById('login-erro').style.display='block';}}
 
