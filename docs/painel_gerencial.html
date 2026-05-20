@@ -215,14 +215,7 @@ function getStatus(dv,hs){
     return{texto:'🟢 Dentro do prazo',classe:'status-ok'};
 }
 
-function ed(n){
-    if(!n)return '';
-    var x=parseInt(n);
-    if(isNaN(x))return n;
-    var d=new Date((x-25569)*86400*1000);
-    // Usar toLocaleDateString para pegar a data local correta
-    return d.toLocaleDateString('pt-BR');
-}
+function edh(n){if(!n)return'';var f=parseFloat(n);if(isNaN(f))return'';var d=new Date((f-25569)*86400*1000);return d.toLocaleDateString('pt-BR')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
 function ed(n){if(!n)return'';var x=parseInt(n);if(isNaN(x))return n;var d=new Date((x-25569)*86400*1000);return d.toLocaleDateString('pt-BR');}
 function fm(v){return'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function gp(m){if(m==='todos')return null;var p=m.split('-'),a=parseInt(p[0]),mo=parseInt(p[1]);return{inicio:new Date(a,mo-2,21),fim:new Date(a,mo-1,20)};}
