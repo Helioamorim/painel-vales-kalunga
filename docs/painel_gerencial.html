@@ -230,7 +230,7 @@ function aplicarFiltros(){
     var lf=document.getElementById('filtro-loja')?.value||'todos';
     var p=gp(mr);
     var d=dadosBrutos;
-    if(tipoAcesso==='loja')d=d.filter(i=>i['Loja']===usuarioAtual);
+    if(tipoAcesso==='loja')d=d.filter(i=>i['Loja']===usuarioAtual||i['Loja'].indexOf(usuarioAtual)>=0);
     else if(tipoAcesso==='regional')d=d.filter(i=>i['Regional']===usuarioAtual);
     if(p){document.getElementById('periodo-info').textContent=p.inicio.toLocaleDateString('pt-BR')+' a '+p.fim.toLocaleDateString('pt-BR');d=d.filter(i=>{var de=parseInt(i['DataVale']);if(isNaN(de))return false;var dt=new Date((de-25569)*86400*1000);return dt>=p.inicio&&dt<=p.fim;});}
     else{document.getElementById('periodo-info').textContent='Todos os períodos';}
@@ -270,7 +270,11 @@ function popularDropdownLoja(){var s=document.getElementById('filtro-loja');s.in
 
 function fazerLogin(){
     var v=document.getElementById('login-select').value;
-    if(tipoAcesso==='loja'){v=mapaFilial[v]||v;}
+    if(tipoAcesso==='loja'){
+    var codigo=v;
+    v=mapaFilial[v]||v;
+    console.log('Login loja: digitado='+codigo+' convertido='+v);
+}
     var s=document.getElementById('login-senha').value;
     if(!v){document.getElementById('login-erro').style.display='block';return;}
     var sc=(tipoAcesso==='admin')?SENHA_ADMIN:SENHA;
