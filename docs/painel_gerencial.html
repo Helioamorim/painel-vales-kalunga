@@ -277,9 +277,19 @@ function enviarAprovacao(status){
     })
     .then(r=>r.json())
     .then(d=>{
+        // Atualizar o dado localmente
+        for(var i=0;i<dadosBrutos.length;i++){
+            if(dadosBrutos[i]['ChaveUnica']===chave){
+                dadosBrutos[i]['Status_Aprovacao']=status;
+                dadosBrutos[i]['Observacao_Regional']=obs;
+                dadosBrutos[i]['Aprovador']=usuarioAtual;
+                break;
+            }
+        }
+        // Recarregar a tabela
+        carregarTabelas(dadosFiltrados);
         alert('✅ Status atualizado: '+status);
         fecharModal();
-        if(appAtual==='vales')aplicarFiltros();
     })
     .catch(e=>alert('❌ Erro ao atualizar. Tente novamente.'));
 }
@@ -302,9 +312,16 @@ function enviarRespostaLoja(){
     })
     .then(r=>r.json())
     .then(d=>{
+        // Atualizar localmente
+        for(var i=0;i<dadosBrutos.length;i++){
+            if(dadosBrutos[i]['ChaveUnica']===chave){
+                dadosBrutos[i]['Resposta_Loja']=resposta;
+                break;
+            }
+        }
+        carregarTabelas(dadosFiltrados);
         alert('✅ Resposta enviada!');
         fecharModal();
-        if(appAtual==='vales')aplicarFiltros();
     })
     .catch(e=>alert('❌ Erro ao enviar resposta.'));
 }
