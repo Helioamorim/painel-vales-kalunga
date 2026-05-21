@@ -568,52 +568,46 @@ function exportarExcel(){
     if(tipoAcesso==='loja')dados=dados.filter(i=>i['Loja']===usuarioAtual||i['Loja'].indexOf(usuarioAtual)>=0);
     else if(tipoAcesso==='regional')dados=dados.filter(i=>i['Regional']===usuarioAtual);
     
-    var excel='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
-    excel+='<head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>';
-    
-    // Aba Dashboard
-    excel+='<x:ExcelWorksheet><x:Name>Dashboard</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>';
-    
-    // Uma aba por regional
     var porReg={};dados.forEach(i=>{var r=i['Regional']||'Sem regional';if(!porReg[r])porReg[r]=[];porReg[r].push(i);});
+    
+    var excel='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+    excel+='<head><meta charset="UTF-8">';
+    excel+='<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>';
+    excel+='<x:ExcelWorksheet><x:Name>Dashboard</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>';
     Object.keys(porReg).sort().forEach(function(regional){
-        var nomeAba=regional.substring(0,25).replace(/[\\\/\*\?\[\]:]/g,'-');
+        var nomeAba=regional.substring(0,28).replace(/[\\\/\*\?\[\]:]/g,'-');
         excel+='<x:ExcelWorksheet><x:Name>'+nomeAba+'</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>';
     });
-    
-    excel+='</x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>';
+    excel+='</x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->';
+    excel+='</head><body>';
     
     // ===== ABA DASHBOARD =====
-    excel+='<h2>PAINEL DE VALES - RESUMO POR REGIONAL</h2>';
-    excel+='<p>Atualizado em: '+new Date().toLocaleDateString('pt-BR')+'</p>';
-    excel+='<table border="1" cellpadding="5" cellspacing="0">';
-    excel+='<tr style="background:#003366;color:white;font-weight:bold;"><td>Regional</td><td>QTD Vales</td><td>Valor Total</td></tr>';
+    var resumo={};var tv=0,tq=0;
+    dados.forEach(i=>{var r=i['Regional']||'Sem regional';var v=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;if(!resumo[r])resumo[r]={qtd:0,total:0};resumo[r].qtd++;resumo[r].total+=v;tv+=v;tq++;});
     
-    var totalV=0,totalQ=0;
-    var resumo={};
-    dados.forEach(i=>{var r=i['Regional']||'Sem regional';var v=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;if(!resumo[r])resumo[r]={qtd:0,total:0};resumo[r].qtd++;resumo[r].total+=v;});
-    Object.keys(resumo).sort().forEach(r=>{
-        excel+='<tr><td>'+r+'</td><td>'+resumo[r].qtd+'</td><td>R$ '+resumo[r].total.toFixed(2).replace('.',',')+'</td></tr>';
-        totalV+=resumo[r].total;totalQ+=resumo[r].qtd;
-    });
-    excel+='<tr style="font-weight:bold;background:#e6f0ff;"><td>TOTAL</td><td>'+totalQ+'</td><td>R$ '+totalV.toFixed(2).replace('.',',')+'</td></tr>';
-    excel+='</table>';
+    excel+='<div id="Dashboard"><h2>📊 PAINEL DE VALES - RESUMO POR REGIONAL</h2>';
+    excel+='<p>Atualizado: '+new Date().toLocaleDateString('pt-BR')+' | Total: '+tq+' vales | R$ '+tv.toFixed(2).replace('.',',')+'</p>';
+    excel+='<table border="1" cellpadding="4" cellspacing="0"><tr style="background:#003366;color:white;"><td><b>Regional</b></td><td><b>QTD</b></td><td><b>Valor Total</b></td></tr>';
+    Object.keys(resumo).sort().forEach(r=>{excel+='<tr><td>'+r+'</td><td>'+resumo[r].qtd+'</td><td>R$ '+resumo[r].total.toFixed(2).replace('.',',')+'</td></tr>';});
+    excel+='<tr style="background:#e6f0ff;font-weight:bold;"><td>TOTAL</td><td>'+tq+'</td><td>R$ '+tv.toFixed(2).replace('.',',')+'</td></tr></table></div>';
     
-    // ===== ABAS POR REGIONAL =====
+    // ===== UMA DIV POR REGIONAL (cada uma vira uma aba) =====
     Object.keys(porReg).sort().forEach(function(regional){
         var vales=porReg[regional];
         vales.sort((a,b)=>(parseFloat(b['HoraInicio'])||0)-(parseFloat(a['HoraInicio'])||0));
+        var nomeAba=regional.substring(0,28).replace(/[\\\/\*\?\[\]:]/g,'-');
         
-        excel+='<br><h2>Regional: '+regional+' - '+vales.length+' vales</h2>';
-        excel+='<table border="1" cellpadding="5" cellspacing="0">';
-        excel+='<tr style="background:#003366;color:white;font-weight:bold;"><td>Loja</td><td>Data do Vale</td><td>Crachá</td><td>Motivo</td><td>Valor</td><td>Status</td></tr>';
+        excel+='<div id="'+nomeAba+'"><h2>👤 '+regional+' - '+vales.length+' vales</h2>';
+        excel+='<table border="1" cellpadding="4" cellspacing="0"><tr style="background:#003366;color:white;"><td><b>Loja</b></td><td><b>Data do Vale</b></td><td><b>Crachá</b></td><td><b>Motivo</b></td><td><b>Valor</b></td><td><b>Status</b></td></tr>';
         
+        var tr=0;
         vales.forEach(i=>{
             var dataVale='';var dv=parseInt(i['DataVale']);if(!isNaN(dv)){var d=new Date((dv-25569+1)*86400*1000);dataVale=d.toLocaleDateString('pt-BR');}
-            var valor=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;
+            var valor=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;tr+=valor;
             excel+='<tr><td>'+(i['Loja']||'')+'</td><td>'+dataVale+'</td><td>'+(i['Cracha']||'')+'</td><td>'+(i['Motivo']||'')+'</td><td>R$ '+valor.toFixed(2).replace('.',',')+'</td><td>'+(i['Status_Aprovacao']||'Pendente')+'</td></tr>';
         });
-        excel+='</table>';
+        excel+='<tr style="background:#e6f0ff;font-weight:bold;"><td colspan="4">TOTAL</td><td>R$ '+tr.toFixed(2).replace('.',',')+'</td><td></td></tr>';
+        excel+='</table></div>';
     });
     
     excel+='</body></html>';
@@ -621,12 +615,8 @@ function exportarExcel(){
     var blob=new Blob([excel],{type:'application/vnd.ms-excel;charset=utf-8'});
     var url=URL.createObjectURL(blob);
     var a=document.createElement('a');
-    a.href=url;
-    a.download='Painel_Vales_'+new Date().toISOString().split('T')[0]+'.xls';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    a.href=url;a.download='Painel_Vales_'+new Date().toISOString().split('T')[0]+'.xls';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
 }
 
 function autoLogin(){var u=localStorage.getItem('kalunga_usuario');var t=localStorage.getItem('kalunga_tipo');if(u&&t){tipoAcesso=t;usuarioAtual=u;document.getElementById('login-screen').style.display='none';document.getElementById('app-screen').style.display='block';document.getElementById('menu-usuario').textContent=(tipoAcesso==='loja'?'🏪 ':'👤 ')+u;document.getElementById('header-info').textContent=(tipoAcesso==='loja'?'Loja: ':'Regional: ')+u;document.getElementById('header-info-cob').textContent=(tipoAcesso==='loja'?'Loja: ':'Regional: ')+u;if(tipoAcesso==='regional'){document.getElementById('filtro-loja-container').style.display='';popularDropdownLoja();}if(tipoAcesso==='loja'){document.getElementById('tab-loja').style.display='none';document.getElementById('card-lojas').style.display='none';}popularDropdownCob();if(appAtual==='vales')aplicarFiltros();else filtrarCobranca();}}
