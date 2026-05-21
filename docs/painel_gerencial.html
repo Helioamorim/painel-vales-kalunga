@@ -205,7 +205,17 @@ function ordenarTabela(coluna){
         if(ordemAsc)return va>vb?1:-1;
         return va<vb?1:-1;
     });
+    // Salvar qual aba está ativa
+    var abaAtiva=document.querySelector('.tab-content.ativo')?.id||'aba-base';
+    // Recarregar tabela sem mudar de aba
     carregarTabelas(dados);
+    // Restaurar aba ativa (não deixar ir para dashboard)
+    if(tipoAcesso==='admin'){
+        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('ativo'));
+        document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('ativo'));
+        document.getElementById('aba-base').classList.add('ativo');
+        document.getElementById('tab-base-btn').classList.add('ativo');
+    }
 }
 
 function filtrarAlertas(){
@@ -214,6 +224,15 @@ function filtrarAlertas(){
     var card=document.querySelector('.stat-card.alerta');
     if(filtrandoAlertas){card.style.background='#fff9e6';card.style.border='2px solid #e67e22';}else{card.style.background='white';card.style.border='none';}
     aplicarFiltros();
+    // Restaurar aba ativa para Admin
+    if(tipoAcesso==='admin'){
+        setTimeout(function(){
+            document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('ativo'));
+            document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('ativo'));
+            document.getElementById('aba-base').classList.add('ativo');
+            document.getElementById('tab-base-btn').classList.add('ativo');
+        },50);
+    }
 }
 function setTipo(tipo,btn){tipoAcesso=tipo;document.querySelectorAll('.tipo-btn').forEach(b=>b.classList.remove('ativo'));btn.classList.add('ativo');var c=document.getElementById('login-field-container');if(tipo==='loja'){c.innerHTML='<input type="text" id="login-select" placeholder="Digite o código da loja (ex: 0008)" style="width:100%;padding:12px;margin:8px 0;border:2px solid #ddd;border-radius:10px;font-size:0.95em;">';}else if(tipo==='regional'){var h='<select id="login-select" style="width:100%;padding:12px;margin:8px 0;border:2px solid #ddd;border-radius:10px;font-size:0.95em;">';h+='<option value="">Selecione o regional...</option>';regionais.forEach(r=>{h+='<option value="'+r+'">👤 '+r+'</option>';});h+='</select>';c.innerHTML=h;}else{c.innerHTML='<select id="login-select" style="width:100%;padding:12px;margin:8px 0;border:2px solid #ddd;border-radius:10px;font-size:0.95em;"><option value="admin">👑 Administrador</option></select>';}}
 
