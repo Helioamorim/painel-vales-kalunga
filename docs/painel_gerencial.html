@@ -241,7 +241,7 @@ function abrirModalLoja(loja){var d=dadosFiltrados.filter(i=>i['Loja']===loja);d
 
 const URL_APROVACAO = 'https://defaulta375ca2950b6471c8c9dc95b1300d8.1c.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/f8865e8b8dd0480c87275c5d663a6245/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=nuzmGtK1XMMfhAE_MTgoHqO8SdTa-Tqsh4cwKNUFQDU';
 
-function abrirModalAprovacao(chaveUnica, loja, dataVale, motivo, valor, statusAtual, obsRegional, respostaLoja){
+function abrirModalAprovacao(chaveUnica, loja, dataVale, motivo, valor, statusAtual, obsRegional, respostaLoja, cracha){
     var h='<div class="modal-aprovacao-info">';
     h+='<p><span>Loja:</span> '+loja+'</p>';
     h+='<p><span>Data do Vale:</span> '+dataVale+'</p>';
@@ -252,15 +252,20 @@ function abrirModalAprovacao(chaveUnica, loja, dataVale, motivo, valor, statusAt
     
     h+='<input type="hidden" id="aprov-chave" value="'+chaveUnica+'">';
     
-    if(tipoAcesso==='regional'||tipoAcesso==='admin'){
-        h+='<div class="modal-aprovacao-botoes">';
-        h+='<button class="btn-aprovar" onclick="enviarAprovacao(\'Aprovado\')">🟢 Aprovar</button>';
-        h+='<button class="btn-recusar" onclick="enviarAprovacao(\'Recusado\')">🔴 Recusar</button>';
-        h+='<button class="btn-esclarecimento" onclick="enviarAprovacao(\'Esclarecimento\')">🟡 Pedir Esclarecimento</button>';
-        h+='</div>';
-        h+='<label><strong>Observação:</strong></label>';
-        h+='<textarea class="modal-aprovacao-textarea" id="aprov-obs" placeholder="Descreva o motivo...">'+(obsRegional||'')+'</textarea>';
-    }
+   if(tipoAcesso==='regional'||tipoAcesso==='admin'){
+    h+='<div class="modal-aprovacao-botoes">';
+    h+='<button class="btn-aprovar" onclick="enviarAprovacao(\'Aprovado\')">🟢 Aprovar</button>';
+    h+='<button class="btn-recusar" onclick="enviarAprovacao(\'Recusado\')">🔴 Recusar</button>';
+    h+='<button class="btn-esclarecimento" onclick="enviarAprovacao(\'Esclarecimento\')">🟡 Pedir Esclarecimento</button>';
+    h+='</div>';
+    h+='<label><strong>Observação:</strong></label>';
+    h+='<textarea class="modal-aprovacao-textarea" id="aprov-obs" placeholder="Descreva o motivo...">'+(obsRegional||'')+'</textarea>';
+}
+if(tipoAcesso==='admin'){
+    h+='<div class="modal-aprovacao-botoes" style="margin-top:10px;">';
+    h+='<button class="btn-aprovar" style="background:#3498db;" onclick="abrirModalEditar(\''+chaveUnica+'\',\''+dataVale+'\',\''+(cracha||'')+'\',\''+(valor||'').replace('R$ ','').replace(/\./g,'').replace(',','.')+'\',\''+(motivo||'').replace(/'/g,"\\'")+'\')">✏️ Editar Vale</button>';
+    h+='</div>';
+}
     
     if(tipoAcesso==='loja'&&(statusAtual==='Esclarecimento'||statusAtual==='Recusado')){
         h+='<label><strong>Responder ao Regional:</strong></label>';
@@ -383,8 +388,7 @@ function carregarTabelas(d){
     d.forEach(i=>{
         var s=getStatus(i['DataVale'],i['HoraInicio']);
         var c=s.classe!=='status-ok'?' style="background:#fff9e6;"':'';
-        h+='<tr'+c+' style="cursor:pointer;" onclick="abrirModalAprovacao(\''+(i['ChaveUnica']||'')+'\',\''+(i['Loja']||'')+'\',\''+ed(i['DataVale'])+'\',\''+(i['Motivo']||'').replace(/'/g,"\\'")+'\',\''+fm(parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0)+'\',\''+(i['Status_Aprovacao']||'')+'\',\''+(i['Observacao_Regional']||'').replace(/'/g,"\\'")+'\',\''+(i['Resposta_Loja']||'').replace(/'/g,"\\'")+'\')"><td>'+(i['Loja']||'')+'</td><td>'+edh(i['HoraInicio'])+'</td><td>'+ed(i['DataVale'])+'</td><td>'+(i['Cracha']||'-')+'</td><td>'+(i['Motivo']||'')+'</td><td class="valor">'+fm(parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0)+'</td><td>'+(i['DataEnvio']&&i['DataEnvio']!==''?ed(i['DataEnvio']):'-')+'</td><td class="status-'+(i['Status_Aprovacao']||'Pendente').toLowerCase()+'">'+(i['Status_Aprovacao']||'⬜ Pendente')+'</td><td class="'+s.classe+'">'+s.texto+'</td></tr>';
-    });
+        h+='<tr'+c+' style="cursor:pointer;" onclick="abrirModalAprovacao(\''+(i['ChaveUnica']||'')+'\',\''+(i['Loja']||'')+'\',\''+ed(i['DataVale'])+'\',\''+(i['Motivo']||'').replace(/'/g,"\\'")+'\',\''+fm(parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0)+'\',\''+(i['Status_Aprovacao']||'')+'\',\''+(i['Observacao_Regional']||'').replace(/'/g,"\\'")+'\',\''+(i['Resposta_Loja']||'').replace(/'/g,"\\'")+'\',\''+(i['Cracha']||'')+'\')"><td>'+(i['Loja']||'')+'</td><td>'+edh(i['HoraInicio'])+'</td><td>'+ed(i['DataVale'])+'</td><td>'+(i['Cracha']||'-')+'</td><td>'+(i['Motivo']||'')+'</td><td class="valor">'+fm(parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0)+'</td><td>'+(i['DataEnvio']&&i['DataEnvio']!==''?ed(i['DataEnvio']):'-')+'</td><td class="status-'+(i['Status_Aprovacao']||'Pendente').toLowerCase()+'">'+(i['Status_Aprovacao']||'⬜ Pendente')+'</td><td class="'+s.classe+'">'+s.texto+'</td></tr>';});
     h+='</tbody></table>';document.getElementById('tabela-base').innerHTML=h;
     
     var ma=[];Object.keys(pm).forEach(m=>ma.push({motivo:m,qtd:pm[m].qtd,total:pm[m].total}));ma.sort((a,b)=>b.total-a.total);
@@ -492,6 +496,71 @@ function abrirModalCobranca(loja){
 }
 
 // ============ LOGIN ============
+function abrirModalEditar(chave, dataVale, cracha, valor, motivo){
+    document.getElementById('edit-chave').value=chave;
+    document.getElementById('edit-data').value=dataVale;
+    document.getElementById('edit-cracha').value=cracha||'';
+    document.getElementById('edit-valor').value=valor||'';
+    document.getElementById('edit-motivo').value=motivo||'';
+    document.getElementById('edit-obs').value='';
+    document.getElementById('edit-msg').textContent='';
+    document.getElementById('modal-overlay').classList.remove('ativo');
+    document.getElementById('modal-editar-overlay').classList.add('ativo');
+}
+
+function fecharModalEditar(){
+    document.getElementById('modal-editar-overlay').classList.remove('ativo');
+}
+
+function salvarEdicao(){
+    var chave=document.getElementById('edit-chave').value;
+    var data=document.getElementById('edit-data').value;
+    var cracha=document.getElementById('edit-cracha').value;
+    var valor=document.getElementById('edit-valor').value;
+    var motivo=document.getElementById('edit-motivo').value;
+    var obs=document.getElementById('edit-obs').value||'Dados editados pelo Admin';
+    
+    var dataExcel='';
+    if(data){var d=new Date(data+'T00:00:00');dataExcel=Math.round((d.getTime()/86400000)+25569)+'';}
+    
+    fetch(URL_APROVACAO,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+            ChaveUnica:chave,
+            Status_Aprovacao:'Editado',
+            Observacao_Regional:obs,
+            Resposta_Loja:'',
+            Aprovador:usuarioAtual,
+            Data_Aprovacao:new Date().toISOString().split('T')[0],
+            Cracha_Editado:cracha,
+            DataVale_Editada:dataExcel,
+            Valor_Editado:valor,
+            Motivo_Editado:motivo
+        })
+    })
+    .then(r=>r.json())
+    .then(d=>{
+        for(var i=0;i<dadosBrutos.length;i++){
+            if(dadosBrutos[i]['ChaveUnica']===chave){
+                if(cracha)dadosBrutos[i]['Cracha']=cracha;
+                if(valor)dadosBrutos[i]['ValorVale']=valor;
+                if(motivo)dadosBrutos[i]['Motivo']=motivo;
+                dadosBrutos[i]['Status_Aprovacao']='Editado';
+                dadosBrutos[i]['Observacao_Regional']=obs;
+                break;
+            }
+        }
+        carregarTabelas(dadosFiltrados);
+        document.getElementById('edit-msg').textContent='✅ Alterações salvas!';
+        document.getElementById('edit-msg').style.color='#0a0';
+        setTimeout(fecharModalEditar,1000);
+    })
+    .catch(e=>{
+        document.getElementById('edit-msg').textContent='❌ Erro ao salvar';
+        document.getElementById('edit-msg').style.color='#cc0000';
+    });
+}
 function autoLogin(){var u=localStorage.getItem('kalunga_usuario');var t=localStorage.getItem('kalunga_tipo');if(u&&t){tipoAcesso=t;usuarioAtual=u;document.getElementById('login-screen').style.display='none';document.getElementById('app-screen').style.display='block';document.getElementById('menu-usuario').textContent=(tipoAcesso==='loja'?'🏪 ':'👤 ')+u;document.getElementById('header-info').textContent=(tipoAcesso==='loja'?'Loja: ':'Regional: ')+u;document.getElementById('header-info-cob').textContent=(tipoAcesso==='loja'?'Loja: ':'Regional: ')+u;if(tipoAcesso==='regional'){document.getElementById('filtro-loja-container').style.display='';popularDropdownLoja();}if(tipoAcesso==='loja'){document.getElementById('tab-loja').style.display='none';document.getElementById('card-lojas').style.display='none';}popularDropdownCob();if(appAtual==='vales')aplicarFiltros();else filtrarCobranca();}}
 
 function fazerLogin(){var v=document.getElementById('login-select').value;if(tipoAcesso==='loja'){v=mapaFilial[v]||v;}var s=document.getElementById('login-senha').value;if(!v){document.getElementById('login-erro').style.display='block';return;}var sc=(tipoAcesso==='admin')?SENHA_ADMIN:SENHA;if(s===sc){usuarioAtual=v;document.getElementById('login-screen').style.display='none';document.getElementById('app-screen').style.display='block';document.getElementById('menu-usuario').textContent=(tipoAcesso==='loja'?'🏪 ':'👤 ')+v;document.getElementById('header-info').textContent=(tipoAcesso==='loja'?'Loja: ':'Regional: ')+v;document.getElementById('header-info-cob').textContent=(tipoAcesso==='loja'?'Loja: ':'Regional: ')+v;if(tipoAcesso==='regional'){document.getElementById('filtro-loja-container').style.display='';popularDropdownLoja();}else{document.getElementById('filtro-loja-container').style.display='none';}if(tipoAcesso==='loja'){document.getElementById('tab-loja').style.display='none';document.getElementById('card-lojas').style.display='none';}else{document.getElementById('tab-loja').style.display='';document.getElementById('card-lojas').style.display='';}popularDropdownCob();localStorage.setItem('kalunga_usuario',v);localStorage.setItem('kalunga_tipo',tipoAcesso);if(appAtual==='vales')aplicarFiltros();else filtrarCobranca();}else{document.getElementById('login-erro').style.display='block';}}
@@ -502,5 +571,24 @@ function abrirAba(nome){document.querySelectorAll('#tela-vales .tab-btn').forEac
 
 autoLogin();
 </script>
+
+<!-- ⬇️⬇️⬇️ COLE O MODAL DE EDIÇÃO AQUI ⬇️⬇️⬇️ -->
+<div class="modal-overlay" id="modal-editar-overlay">
+    <div class="modal" style="max-width:500px;">
+        <div class="modal-header"><h2>✏️ Editar Vale</h2><button class="modal-close" onclick="fecharModalEditar()">✕</button></div>
+        <div class="modal-body" style="padding:15px;">
+            <input type="hidden" id="edit-chave">
+            <label>Data do Vale:</label><input type="date" id="edit-data" style="width:100%;padding:8px;margin:5px 0;border:1px solid #ddd;border-radius:6px;">
+            <label>Crachá:</label><input type="text" id="edit-cracha" style="width:100%;padding:8px;margin:5px 0;border:1px solid #ddd;border-radius:6px;">
+            <label>Valor do Vale (R$):</label><input type="text" id="edit-valor" style="width:100%;padding:8px;margin:5px 0;border:1px solid #ddd;border-radius:6px;">
+            <label>Motivo:</label><textarea id="edit-motivo" style="width:100%;padding:8px;margin:5px 0;border:1px solid #ddd;border-radius:6px;min-height:60px;"></textarea>
+            <label>Observação:</label><input type="text" id="edit-obs" placeholder="Descreva a alteração..." style="width:100%;padding:8px;margin:5px 0;border:1px solid #ddd;border-radius:6px;">
+            <button onclick="salvarEdicao()" style="width:100%;padding:12px;background:#3498db;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;margin-top:10px;">💾 Salvar Alterações</button>
+            <p id="edit-msg" style="text-align:center;margin-top:8px;font-weight:600;"></p>
+        </div>
+    </div>
+</div>
+<!-- ⬆️⬆️⬆️ FIM DO MODAL ⬆️⬆️⬆️ -->
+
 </body>
 </html>
