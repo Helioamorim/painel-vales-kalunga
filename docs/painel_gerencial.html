@@ -570,52 +570,61 @@ function exportarExcel(){
     
     var porReg={};dados.forEach(i=>{var r=i['Regional']||'Sem regional';if(!porReg[r])porReg[r]=[];porReg[r].push(i);});
     
-    var excel='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
-    excel+='<head><meta charset="UTF-8">';
-    excel+='<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>';
-    excel+='<x:ExcelWorksheet><x:Name>Dashboard</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>';
-    Object.keys(porReg).sort().forEach(function(regional){
-        var nomeAba=regional.substring(0,28).replace(/[\\\/\*\?\[\]:]/g,'-');
-        excel+='<x:ExcelWorksheet><x:Name>'+nomeAba+'</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>';
-    });
-    excel+='</x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->';
-    excel+='</head><body>';
+    // Perguntar se quer baixar tudo ou escolher
+    var opcao=confirm('📥 Clique OK para baixar TODOS os regionais + Dashboard\nClique Cancelar para escolher um regional');
     
-    // ===== ABA DASHBOARD =====
-    var resumo={};var tv=0,tq=0;
-    dados.forEach(i=>{var r=i['Regional']||'Sem regional';var v=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;if(!resumo[r])resumo[r]={qtd:0,total:0};resumo[r].qtd++;resumo[r].total+=v;tv+=v;tq++;});
-    
-    excel+='<div id="Dashboard"><h2>📊 PAINEL DE VALES - RESUMO POR REGIONAL</h2>';
-    excel+='<p>Atualizado: '+new Date().toLocaleDateString('pt-BR')+' | Total: '+tq+' vales | R$ '+tv.toFixed(2).replace('.',',')+'</p>';
-    excel+='<table border="1" cellpadding="4" cellspacing="0"><tr style="background:#003366;color:white;"><td><b>Regional</b></td><td><b>QTD</b></td><td><b>Valor Total</b></td></tr>';
-    Object.keys(resumo).sort().forEach(r=>{excel+='<tr><td>'+r+'</td><td>'+resumo[r].qtd+'</td><td>R$ '+resumo[r].total.toFixed(2).replace('.',',')+'</td></tr>';});
-    excel+='<tr style="background:#e6f0ff;font-weight:bold;"><td>TOTAL</td><td>'+tq+'</td><td>R$ '+tv.toFixed(2).replace('.',',')+'</td></tr></table></div>';
-    
-    // ===== UMA DIV POR REGIONAL (cada uma vira uma aba) =====
-    Object.keys(porReg).sort().forEach(function(regional){
-        var vales=porReg[regional];
-        vales.sort((a,b)=>(parseFloat(b['HoraInicio'])||0)-(parseFloat(a['HoraInicio'])||0));
-        var nomeAba=regional.substring(0,28).replace(/[\\\/\*\?\[\]:]/g,'-');
-        
-        excel+='<div id="'+nomeAba+'"><h2>👤 '+regional+' - '+vales.length+' vales</h2>';
-        excel+='<table border="1" cellpadding="4" cellspacing="0"><tr style="background:#003366;color:white;"><td><b>Loja</b></td><td><b>Data do Vale</b></td><td><b>Crachá</b></td><td><b>Motivo</b></td><td><b>Valor</b></td><td><b>Status</b></td></tr>';
-        
-        var tr=0;
-        vales.forEach(i=>{
-            var dataVale='';var dv=parseInt(i['DataVale']);if(!isNaN(dv)){var d=new Date((dv-25569+1)*86400*1000);dataVale=d.toLocaleDateString('pt-BR');}
-            var valor=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;tr+=valor;
-            excel+='<tr><td>'+(i['Loja']||'')+'</td><td>'+dataVale+'</td><td>'+(i['Cracha']||'')+'</td><td>'+(i['Motivo']||'')+'</td><td>R$ '+valor.toFixed(2).replace('.',',')+'</td><td>'+(i['Status_Aprovacao']||'Pendente')+'</td></tr>';
+    if(opcao){
+        // Baixar todos
+        baixarDashboard();
+        Object.keys(porReg).sort().forEach(function(regional,i){
+            setTimeout(function(){baixarRegional(regional,porReg[regional]);},i*500);
         });
-        excel+='<tr style="background:#e6f0ff;font-weight:bold;"><td colspan="4">TOTAL</td><td>R$ '+tr.toFixed(2).replace('.',',')+'</td><td></td></tr>';
-        excel+='</table></div>';
+    }else{
+        // Escolher um regional
+        var lista=Object.keys(porReg).sort();
+        var msg='Escolha o regional (digite o número):\n\n';
+        lista.forEach(function(r,i){msg+=(i+1)+'. '+r+' ('+porReg[r].length+' vales)\n';});
+        msg+='0. Dashboard (Resumo)';
+        var escolha=parseInt(prompt(msg));
+        if(escolha===0)baixarDashboard();
+        else if(escolha>0&&escolha<=lista.length)baixarRegional(lista[escolha-1],porReg[lista[escolha-1]]);
+    }
+}
+
+function baixarDashboard(){
+    var dados=dadosBrutos.slice();
+    if(tipoAcesso==='loja')dados=dados.filter(i=>i['Loja']===usuarioAtual||i['Loja'].indexOf(usuarioAtual)>=0);
+    else if(tipoAcesso==='regional')dados=dados.filter(i=>i['Regional']===usuarioAtual);
+    
+    var csv='Regional;QTD Vales;Valor Total\n';
+    var resumo={};dados.forEach(i=>{var r=i['Regional']||'Sem regional';var v=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;if(!resumo[r])resumo[r]={qtd:0,total:0};resumo[r].qtd++;resumo[r].total+=v;});
+    var tv=0,tq=0;
+    Object.keys(resumo).sort().forEach(r=>{csv+=r+';'+resumo[r].qtd+';R$ '+resumo[r].total.toFixed(2).replace('.',',')+'\n';tv+=resumo[r].total;tq+=resumo[r].qtd;});
+    csv+='TOTAL;'+tq+';R$ '+tv.toFixed(2).replace('.',',')+'\n';
+    
+    baixarArquivo(csv,'Dashboard_Vales.csv');
+}
+
+function baixarRegional(regional,vales){
+    vales.sort((a,b)=>(parseFloat(b['HoraInicio'])||0)-(parseFloat(a['HoraInicio'])||0));
+    var csv='Loja;Data do Vale;Crach\u00e1;Motivo;Valor;Status Aprova\u00e7\u00e3o\n';
+    var total=0;
+    vales.forEach(i=>{
+        var dataVale='';var dv=parseInt(i['DataVale']);if(!isNaN(dv)){var d=new Date((dv-25569+1)*86400*1000);dataVale=d.toLocaleDateString('pt-BR');}
+        var valor=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;total+=valor;
+        csv+=(i['Loja']||'')+';'+dataVale+';'+(i['Cracha']||'')+';'+(i['Motivo']||'')+';R$ '+valor.toFixed(2).replace('.',',')+';'+(i['Status_Aprovacao']||'Pendente')+'\n';
     });
+    csv+='TOTAL;;;;R$ '+total.toFixed(2).replace('.',',')+';\n';
     
-    excel+='</body></html>';
-    
-    var blob=new Blob([excel],{type:'application/vnd.ms-excel;charset=utf-8'});
+    var nomeArquivo=regional.replace(/[\\\/\*\?\[\]:]/g,'-').substring(0,40)+'.csv';
+    baixarArquivo(csv,nomeArquivo);
+}
+
+function baixarArquivo(conteudo,nome){
+    var blob=new Blob(['\uFEFF'+conteudo],{type:'text/csv;charset=utf-8'});
     var url=URL.createObjectURL(blob);
     var a=document.createElement('a');
-    a.href=url;a.download='Painel_Vales_'+new Date().toISOString().split('T')[0]+'.xls';
+    a.href=url;a.download=nome;
     document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
 }
 
