@@ -563,68 +563,52 @@ function salvarEdicao(){
     });
 }
 
-function exportarExcel(){
-    var dados=dadosBrutos.slice();
-    if(tipoAcesso==='loja')dados=dados.filter(i=>i['Loja']===usuarioAtual||i['Loja'].indexOf(usuarioAtual)>=0);
-    else if(tipoAcesso==='regional')dados=dados.filter(i=>i['Regional']===usuarioAtual);
-    
-    var porReg={};dados.forEach(i=>{var r=i['Regional']||'Sem regional';if(!porReg[r])porReg[r]=[];porReg[r].push(i);});
-    
-    // Perguntar se quer baixar tudo ou escolher
-    var opcao=confirm('📥 Clique OK para baixar TODOS os regionais + Dashboard\nClique Cancelar para escolher um regional');
-    
-    if(opcao){
-        // Baixar todos
-        baixarDashboard();
-        Object.keys(porReg).sort().forEach(function(regional,i){
-            setTimeout(function(){baixarRegional(regional,porReg[regional]);},i*500);
-        });
-    }else{
-        // Escolher um regional
-        var lista=Object.keys(porReg).sort();
-        var msg='Escolha o regional (digite o número):\n\n';
-        lista.forEach(function(r,i){msg+=(i+1)+'. '+r+' ('+porReg[r].length+' vales)\n';});
-        msg+='0. Dashboard (Resumo)';
-        var escolha=parseInt(prompt(msg));
-        if(escolha===0)baixarDashboard();
-        else if(escolha>0&&escolha<=lista.length)baixarRegional(lista[escolha-1],porReg[lista[escolha-1]]);
-    }
-}
-
 function baixarDashboard(){
     var dados=dadosBrutos.slice();
     if(tipoAcesso==='loja')dados=dados.filter(i=>i['Loja']===usuarioAtual||i['Loja'].indexOf(usuarioAtual)>=0);
     else if(tipoAcesso==='regional')dados=dados.filter(i=>i['Regional']===usuarioAtual);
     
-    var csv='Regional;QTD Vales;Valor Total\n';
+    var html='<html><head><meta charset="UTF-8"><style>td{padding:6px 10px;border:1px solid #ccc;}th{background:#003366;color:white;padding:8px;}.titulo{font-size:16px;font-weight:bold;color:#003366;}.total{background:#e6f0ff;font-weight:bold;}.valor{text-align:right;}</style></head><body>';
+    html+='<div class="titulo">📊 PAINEL DE VALES - RESUMO POR REGIONAL</div>';
+    html+='<p>Atualizado: '+new Date().toLocaleDateString('pt-BR')+'</p>';
+    html+='<table border="1" cellspacing="0"><thead><tr><th>Regional</th><th>QTD Vales</th><th>Valor Total</th></tr></thead><tbody>';
+    
     var resumo={};dados.forEach(i=>{var r=i['Regional']||'Sem regional';var v=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;if(!resumo[r])resumo[r]={qtd:0,total:0};resumo[r].qtd++;resumo[r].total+=v;});
     var tv=0,tq=0;
-    Object.keys(resumo).sort().forEach(r=>{csv+=r+';'+resumo[r].qtd+';R$ '+resumo[r].total.toFixed(2).replace('.',',')+'\n';tv+=resumo[r].total;tq+=resumo[r].qtd;});
-    csv+='TOTAL;'+tq+';R$ '+tv.toFixed(2).replace('.',',')+'\n';
+    Object.keys(resumo).sort().forEach(r=>{html+='<tr><td>'+r+'</td><td style="text-align:center;">'+resumo[r].qtd+'</td><td class="valor">R$ '+resumo[r].total.toFixed(2).replace('.',',')+'</td></tr>';tv+=resumo[r].total;tq+=resumo[r].qtd;});
+    html+='<tr class="total"><td>TOTAL</td><td style="text-align:center;">'+tq+'</td><td class="valor">R$ '+tv.toFixed(2).replace('.',',')+'</td></tr>';
+    html+='</tbody></table></body></html>';
     
-    baixarArquivo(csv,'Dashboard_Vales.csv');
+    baixarArquivoHTML(html,'Dashboard_Vales');
 }
 
 function baixarRegional(regional,vales){
     vales.sort((a,b)=>(parseFloat(b['HoraInicio'])||0)-(parseFloat(a['HoraInicio'])||0));
-    var csv='Loja;Data do Vale;Crach\u00e1;Motivo;Valor;Status Aprova\u00e7\u00e3o\n';
+    
+    var html='<html><head><meta charset="UTF-8"><style>td{padding:5px 8px;border:1px solid #ddd;}th{background:#003366;color:white;padding:8px;font-size:11px;}.titulo{font-size:16px;font-weight:bold;color:#003366;}.total{background:#e6f0ff;font-weight:bold;}.valor{text-align:right;}.aprovado{color:green;}.recusado{color:red;}.pendente{color:gray;}</style></head><body>';
+    html+='<div class="titulo">👤 '+regional+' - '+vales.length+' vales</div>';
+    html+='<br><table border="1" cellspacing="0"><thead><tr><th>Loja</th><th>Data do Vale</th><th>Crachá</th><th>Motivo</th><th>Valor</th><th>Status</th></tr></thead><tbody>';
+    
     var total=0;
     vales.forEach(i=>{
         var dataVale='';var dv=parseInt(i['DataVale']);if(!isNaN(dv)){var d=new Date((dv-25569+1)*86400*1000);dataVale=d.toLocaleDateString('pt-BR');}
         var valor=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;total+=valor;
-        csv+=(i['Loja']||'')+';'+dataVale+';'+(i['Cracha']||'')+';'+(i['Motivo']||'')+';R$ '+valor.toFixed(2).replace('.',',')+';'+(i['Status_Aprovacao']||'Pendente')+'\n';
+        var status=i['Status_Aprovacao']||'Pendente';
+        var classeStatus=status.toLowerCase();
+        html+='<tr><td>'+(i['Loja']||'')+'</td><td>'+dataVale+'</td><td>'+(i['Cracha']||'')+'</td><td>'+(i['Motivo']||'')+'</td><td class="valor">R$ '+valor.toFixed(2).replace('.',',')+'</td><td class="'+classeStatus+'">'+status+'</td></tr>';
     });
-    csv+='TOTAL;;;;R$ '+total.toFixed(2).replace('.',',')+';\n';
+    html+='<tr class="total"><td colspan="4">TOTAL</td><td class="valor">R$ '+total.toFixed(2).replace('.',',')+'</td><td></td></tr>';
+    html+='</tbody></table></body></html>';
     
-    var nomeArquivo=regional.replace(/[\\\/\*\?\[\]:]/g,'-').substring(0,40)+'.csv';
-    baixarArquivo(csv,nomeArquivo);
+    var nomeArquivo=regional.replace(/[\\\/\*\?\[\]:]/g,'-').substring(0,40);
+    baixarArquivoHTML(html,nomeArquivo);
 }
 
-function baixarArquivo(conteudo,nome){
-    var blob=new Blob(['\uFEFF'+conteudo],{type:'text/csv;charset=utf-8'});
+function baixarArquivoHTML(conteudo,nome){
+    var blob=new Blob([conteudo],{type:'application/vnd.ms-excel;charset=utf-8'});
     var url=URL.createObjectURL(blob);
     var a=document.createElement('a');
-    a.href=url;a.download=nome;
+    a.href=url;a.download=nome+'.xls';
     document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
 }
 
