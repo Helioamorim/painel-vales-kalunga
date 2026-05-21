@@ -195,6 +195,7 @@ const mapaFilial={'0003':'0003-SP-SPO-Ipiranga','0007':'0007-SP-SPO-Lapa','0008'
 var colunaOrdenacao=null,ordemAsc=true,filtrandoAlertas=false;
 
 function ordenarTabela(coluna){
+    event.stopPropagation();
     if(colunaOrdenacao===coluna){ordemAsc=!ordemAsc;}else{colunaOrdenacao=coluna;ordemAsc=true;}
     var dados=[...dadosFiltrados];
     dados.sort((a,b)=>{
@@ -208,6 +209,7 @@ function ordenarTabela(coluna){
 }
 
 function filtrarAlertas(){
+    event.stopPropagation();
     filtrandoAlertas=!filtrandoAlertas;
     var card=document.querySelector('.stat-card.alerta');
     if(filtrandoAlertas){card.style.background='#fff9e6';card.style.border='2px solid #e67e22';}else{card.style.background='white';card.style.border='none';}
