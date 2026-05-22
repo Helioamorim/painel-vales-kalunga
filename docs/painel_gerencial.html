@@ -827,8 +827,25 @@ function alterarSenha(){
     if(nova.length<4){erro.textContent='❌ Mínimo 4 caracteres!';erro.style.display='block';return;}
     if(nova!==confirmar){erro.textContent='❌ Senhas não conferem!';erro.style.display='block';return;}
     
-    ok.style.display='block';
-    setTimeout(function(){fecharModalSenha();},1500);
+    // Enviar para o fluxo Power Automate
+    fetch(URL_ATUALIZAR_SENHA,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+            Usuario:usuarioAtual,
+            Tipo:tipoAcesso==='admin'?'admin':(tipoAcesso==='loja'?'loja':'regional'),
+            Senha:nova
+        })
+    })
+    .then(r=>r.json())
+    .then(d=>{
+        ok.style.display='block';
+        setTimeout(function(){fecharModalSenha();},1500);
+    })
+    .catch(e=>{
+        erro.textContent='❌ Erro ao salvar. Tente novamente.';
+        erro.style.display='block';
+    });
 }
 
 function autoLogin(){var u=localStorage.getItem('kalunga_usuario');var t=localStorage.getItem('kalunga_tipo');if(u&&t){tipoAcesso=t;usuarioAtual=u;document.getElementById('login-screen').style.display='none';document.getElementById('app-screen').style.display='block';document.getElementById('menu-usuario').textContent=(tipoAcesso==='loja'?'🏪 ':'👤 ')+u;document.getElementById('header-info').textContent=(tipoAcesso==='loja'?'Loja: ':'Regional: ')+u;document.getElementById('header-info-cob').textContent=(tipoAcesso==='loja'?'Loja: ':'Regional: ')+u;if(tipoAcesso==='regional'){document.getElementById('filtro-loja-container').style.display='';popularDropdownLoja();}if(tipoAcesso==='loja'){document.getElementById('tab-loja').style.display='none';document.getElementById('card-lojas').style.display='none';}
