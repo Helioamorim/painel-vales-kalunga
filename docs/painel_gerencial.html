@@ -230,6 +230,8 @@ function ordenarTabela(coluna){
         return va<vb?1:-1;
     });
     carregarTabelas(dados);
+}
+
 function filtrarAlertas(e){
     e.stopPropagation();
     filtrandoAlertas=!filtrandoAlertas;
@@ -283,7 +285,7 @@ function abrirModalAprovacao(chaveUnica, loja, dataVale, motivo, valor, statusAt
     h+='<input type="hidden" id="aprov-chave" value="'+chaveUnica+'">';
     
     var podeAprovar=(tipoAcesso==='regional'||(tipoAcesso==='admin'&&adminNivel==='master'));
-    var podeEditar=(tipoAcesso==='admin'&&(adminNivel==='master'||adminNivel==='editor'));
+var podeEditar=(tipoAcesso==='admin'&&(adminNivel==='master'||adminNivel==='editor'));
     
     if(podeAprovar){
         h+='<div class="modal-aprovacao-botoes">';
@@ -819,7 +821,7 @@ function alterarSenha(){
     var ok=document.getElementById('senha-ok');
     erro.style.display='none';ok.style.display='none';
     
-    var senhaCorreta=(tipoAcesso==='admin'&&ADMINS[usuarioAtual])?ADMINS[usuarioAtual].senha:SENHA;
+    var senhaCorreta=buscarSenha(usuarioAtual,tipoAcesso==='admin'?'admin':(tipoAcesso==='loja'?'loja':'regional'));
     
     if(atual!==senhaCorreta){erro.textContent='❌ Senha atual incorreta!';erro.style.display='block';return;}
     if(nova.length<4){erro.textContent='❌ Mínimo 4 caracteres!';erro.style.display='block';return;}
