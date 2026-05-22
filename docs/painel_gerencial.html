@@ -780,6 +780,38 @@ function salvarSenhaAdmin(){
         alert('⚠️ Para tornar permanente, altere o código fonte do modelo.html');
     },500);
 }
+function abrirModalSenha(){
+    document.getElementById('senha-usuario-info').textContent='Usuário: '+(tipoAcesso==='loja'?'🏪 ':'👤 ')+usuarioAtual;
+    document.getElementById('senha-atual').value='';
+    document.getElementById('senha-nova').value='';
+    document.getElementById('senha-confirmar').value='';
+    document.getElementById('senha-erro').style.display='none';
+    document.getElementById('senha-ok').style.display='none';
+    document.getElementById('modal-senha-overlay').classList.add('ativo');
+}
+
+function fecharModalSenha(){
+    document.getElementById('modal-senha-overlay').classList.remove('ativo');
+}
+
+function alterarSenha(){
+    var atual=document.getElementById('senha-atual').value;
+    var nova=document.getElementById('senha-nova').value;
+    var confirmar=document.getElementById('senha-confirmar').value;
+    var erro=document.getElementById('senha-erro');
+    var ok=document.getElementById('senha-ok');
+    erro.style.display='none';ok.style.display='none';
+    
+    var senhaCorreta=(tipoAcesso==='admin'&&ADMINS[usuarioAtual])?ADMINS[usuarioAtual].senha:SENHA;
+    
+    if(atual!==senhaCorreta){erro.textContent='❌ Senha atual incorreta!';erro.style.display='block';return;}
+    if(nova.length<4){erro.textContent='❌ Mínimo 4 caracteres!';erro.style.display='block';return;}
+    if(nova!==confirmar){erro.textContent='❌ Senhas não conferem!';erro.style.display='block';return;}
+    
+    ok.style.display='block';
+    setTimeout(function(){fecharModalSenha();},1500);
+}
+
 function autoLogin(){var u=localStorage.getItem('kalunga_usuario');var t=localStorage.getItem('kalunga_tipo');if(u&&t){tipoAcesso=t;usuarioAtual=u;document.getElementById('login-screen').style.display='none';document.getElementById('app-screen').style.display='block';document.getElementById('menu-usuario').textContent=(tipoAcesso==='loja'?'🏪 ':'👤 ')+u;document.getElementById('header-info').textContent=(tipoAcesso==='loja'?'Loja: ':'Regional: ')+u;document.getElementById('header-info-cob').textContent=(tipoAcesso==='loja'?'Loja: ':'Regional: ')+u;if(tipoAcesso==='regional'){document.getElementById('filtro-loja-container').style.display='';popularDropdownLoja();}if(tipoAcesso==='loja'){document.getElementById('tab-loja').style.display='none';document.getElementById('card-lojas').style.display='none';}
 if(tipoAcesso==='admin'&&adminNivel==='master'){document.getElementById('menu-gerenciar-senhas').style.display='';}else{document.getElementById('menu-gerenciar-senhas').style.display='none';}
 popularDropdownCob();if(appAtual==='vales')aplicarFiltros();else filtrarCobranca();}}
@@ -820,7 +852,21 @@ function abrirAba(nome){document.querySelectorAll('#tela-vales .tab-btn').forEac
 
 autoLogin();
 </script>
-
+<!-- MODAL ALTERAR MINHA SENHA -->
+<div class="modal-overlay" id="modal-senha-overlay">
+    <div class="modal" style="max-width:400px;">
+        <div class="modal-header"><h2>🔐 Alterar Minha Senha</h2><button class="modal-close" onclick="fecharModalSenha()">✕</button></div>
+        <div class="modal-body" style="padding:15px;text-align:center;">
+            <p id="senha-usuario-info" style="margin-bottom:10px;"></p>
+            <input type="password" id="senha-atual" placeholder="Senha atual" style="width:100%;padding:10px;margin:5px 0;border:1px solid #ddd;border-radius:6px;">
+            <input type="password" id="senha-nova" placeholder="Nova senha" style="width:100%;padding:10px;margin:5px 0;border:1px solid #ddd;border-radius:6px;">
+            <input type="password" id="senha-confirmar" placeholder="Confirmar nova senha" style="width:100%;padding:10px;margin:5px 0;border:1px solid #ddd;border-radius:6px;">
+            <button onclick="alterarSenha()" style="width:100%;padding:12px;background:#0066cc;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;margin-top:10px;">💾 Salvar</button>
+            <p id="senha-erro" style="color:#cc0000;margin-top:8px;display:none;"></p>
+            <p id="senha-ok" style="color:#0a0;margin-top:8px;display:none;">✅ Senha alterada com sucesso!</p>
+        </div>
+    </div>
+</div>
 <!-- ⬇️⬇️⬇️ COLE O MODAL DE EDIÇÃO AQUI ⬇️⬇️⬇️ -->
 <div class="modal-overlay" id="modal-editar-overlay">
     <div class="modal" style="max-width:500px;">
