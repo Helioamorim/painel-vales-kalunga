@@ -228,7 +228,7 @@ function setTipo(tipo,btn){
     var c=document.getElementById('login-field-container');
     if(tipo==='loja'){c.innerHTML='<input type="text" id="login-select" placeholder="Digite o código da loja (ex: 0008)" style="width:100%;padding:12px;margin:8px 0;border:2px solid #ddd;border-radius:10px;font-size:0.95em;">';}
     else if(tipo==='regional'){var h='<select id="login-select" style="width:100%;padding:12px;margin:8px 0;border:2px solid #ddd;border-radius:10px;font-size:0.95em;">';h+='<option value="">Selecione o regional...</option>';regionais.forEach(r=>{h+='<option value="'+r+'">👤 '+r+'</option>';});h+='</select>';c.innerHTML=h;}
-    else{var h='<select id="login-select" style="width:100%;padding:12px;margin:8px 0;border:2px solid #ddd;border-radius:10px;font-size:0.95em;">';h+='<option value="">Selecione o administrador...</option>';Object.keys(ADMINS).sort().forEach(function(a){var nivel=ADMINS[a].nivel==='master'?'👑 Master':(ADMINS[a].nivel==='editor'?'✏️ Editor':'👀 Visualizador');h+='<option value="'+a+'">'+nivel+' '+a+'</option>';});h+='</select>';c.innerHTML=h;}
+    else{var h='<select id="login-select" style="width:100%;padding:12px;margin:8px 0;border:2px solid #ddd;border-radius:10px;font-size:0.95em;">';h+='<option value="">Selecione o administrador...</option>';Object.keys(ADMINS).sort().forEach(function(a){var nivel=ADMINS[a].nivel==='master'?' Master':(ADMINS[a].nivel==='editor'?'✏️ Editor':' Visualizador');h+='<option value="'+a+'">'+nivel+' '+a+'</option>';});h+='</select>';c.innerHTML=h;}
 }
 
 function getStatus(dv,hs){if(!dv)return{texto:'Sem data',classe:''};var n=parseInt(dv);var d=new Date((n-25569)*86400*1000);d.setHours(0,0,0,0);var s=hs?new Date((parseFloat(hs)-25569)*86400*1000):null;if(d>hoje)return{texto:'🔵 Data futura',classe:'status-futuro'};var dia=d.getDate(),mes=d.getMonth(),ano=d.getFullYear();var mesRef,anoRef;if(dia>=21){mesRef=mes+1;anoRef=ano;if(mesRef>11){mesRef=0;anoRef++;}}else{mesRef=mes;anoRef=ano;}var ini=new Date(Date.UTC(anoRef,mesRef-1,21));var fim=new Date(Date.UTC(anoRef,mesRef,20,23,59,59));var lim=new Date(Date.UTC(anoRef,mesRef,23,23,59,59));var dUtc=new Date(Date.UTC(ano,mes,dia,12,0,0));if(dUtc<ini||dUtc>fim)return{texto:'🔴 Fora do período ('+ini.toLocaleDateString('pt-BR')+' a '+fim.toLocaleDateString('pt-BR')+')',classe:'status-fora'};if(s&&s>lim)return{texto:'🟡 Fora do prazo (após '+lim.toLocaleDateString('pt-BR')+')',classe:'status-atraso'};return{texto:'🟢 Dentro do prazo',classe:'status-ok'};}
@@ -425,7 +425,7 @@ function carregarTabelas(d){
     
     if(tipoAcesso==='regional'||tipoAcesso==='admin'){h='<table><thead><tr><th>Loja</th><th>QTD</th><th>⚠️</th><th>Valor Total</th></tr></thead><tbody>';Object.keys(pl).sort().forEach(l=>{h+='<tr><td><span class="clicavel" onclick="abrirModalLoja(\''+l.replace(/'/g,"\\'")+'\')">'+l+'</span></td><td>'+pl[l].qtd+'</td><td style="color:#e67e22;">'+(pl[l].alertas>0?'⚠️ '+pl[l].alertas:'')+'</td><td class="valor">'+fm(pl[l].total)+'</td></tr>';});h+='<tr style="font-weight:bold;background:#e6f0ff;"><td>TOTAL</td><td>'+tq+'</td><td>'+ta+'</td><td class="valor">'+fm(tv)+'</td></tr></tbody></table>';document.getElementById('tabela-loja').innerHTML=h;document.getElementById('tab-loja').style.display='';}else{document.getElementById('tab-loja').style.display='none';}
     
-    if(tipoAcesso==='admin'){carregarDashboard(d);document.getElementById('tab-dashboard-btn').style.display='';document.getElementById('aba-dashboard').classList.add('ativo');document.getElementById('tab-base-btn').classList.remove('ativo');document.getElementById('aba-base').classList.remove('ativo');}else{document.getElementById('tab-dashboard-btn').style.display='none';document.getElementById('aba-dashboard').classList.remove('ativo');}
+    if(tipoAcesso==='admin'){carregarDashboard(d);document.getElementById('tab-dashboard-btn').style.display='';}
     
     document.getElementById('total-vales').textContent=tq;document.getElementById('valor-total').textContent=fm(tv);document.getElementById('total-lojas').textContent=Object.keys(pl).length;document.getElementById('total-alertas').textContent=ta;
 }
@@ -708,7 +708,7 @@ function fazerLogin(){
         if(tipoAcesso==='admin')adminNivel=ADMINS[v].nivel;
         document.getElementById('login-screen').style.display='none';
         document.getElementById('app-screen').style.display='block';
-        var prefixo=tipoAcesso==='loja'?'🏪 ':(tipoAcesso==='admin'?'👑 ':'👤 ');
+        var prefixo=tipoAcesso==='loja'?'🏪 ':(tipoAcesso==='admin'?' ':'👤 ');
         document.getElementById('menu-usuario').textContent=prefixo+v;
         document.getElementById('header-info').textContent=(tipoAcesso==='loja'?'Loja: ':(tipoAcesso==='admin'?'Admin: ':'Regional: '))+v;
         document.getElementById('header-info-cob').textContent=(tipoAcesso==='loja'?'Loja: ':(tipoAcesso==='admin'?'Admin: ':'Regional: '))+v;
