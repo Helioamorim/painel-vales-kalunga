@@ -763,11 +763,8 @@ function carregarSenhaAtual(){
     var partes=valor.split('_');
     var tipo=partes[0];
     var nome=partes.slice(1).join('_');
-    if(tipo==='admin'){
-        document.getElementById('senha-atual-mostrar').value=ADMINS[nome]?ADMINS[nome].senha:'Não encontrado';
-    }else{
-        document.getElementById('senha-atual-mostrar').value=SENHA;
-    }
+    var senha=buscarSenha(nome,tipo==='admin'?'admin':'regional');
+    document.getElementById('senha-atual-mostrar').value=senha||'Não encontrado';
 }
 
 function salvarSenhaAdmin(){
@@ -778,6 +775,28 @@ function salvarSenhaAdmin(){
         document.getElementById('senha-admin-msg').style.color='#cc0000';
         return;
     }
+    var partes=valor.split('_');
+    var tipo=partes[0];
+    var nome=partes.slice(1).join('_');
+    
+    // Enviar para o fluxo Power Automate
+    fetch(URL_ATUALIZAR_SENHA,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({Usuario:nome,Tipo:tipo==='admin'?'admin':'regional',Senha:novaSenha})
+    })
+    .then(r=>r.json())
+    .then(d=>{
+        document.getElementById('senha-admin-msg').textContent='✅ Senha de '+nome+' alterada para: '+novaSenha;
+        document.getElementById('senha-admin-msg').style.color='#0a0';
+        document.getElementById('senha-atual-mostrar').value=novaSenha;
+        document.getElementById('senha-nova-admin').value='';
+    })
+    .catch(e=>{
+        document.getElementById('senha-admin-msg').textContent='❌ Erro ao salvar.';
+        document.getElementById('senha-admin-msg').style.color='#cc0000';
+    });
+}
     var partes=valor.split('_');
     var tipo=partes[0];
     var nome=partes.slice(1).join('_');
