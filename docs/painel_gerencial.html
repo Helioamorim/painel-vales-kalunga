@@ -297,7 +297,15 @@ function abrirModalAprovacao(chaveUnica, loja, dataVale, motivo, valor, statusAt
         if(respostaLoja)h+='<div class="historico-item">🏪 Loja: '+respostaLoja+'</div>';
         h+='</div>';
     }
-    
+    var logEdicoes=logEdicoes||'';
+if(logEdicoes){
+    h+='<div class="historico-status"><strong>📝 Log de Edições:</strong>';
+    var linhas=logEdicoes.split('\n');
+    linhas.forEach(function(linha){
+        h+='<div class="historico-item" style="font-size:0.75em;">'+linha+'</div>';
+    });
+    h+='</div>';
+}
     document.getElementById('modal-titulo').textContent='📋 Aprovação - '+loja;
     document.getElementById('modal-body').innerHTML=h;
     document.getElementById('modal-overlay').classList.add('ativo');
@@ -540,6 +548,39 @@ function salvarEdicao(){
     var motivo=document.getElementById('edit-motivo').value;
     var obs=document.getElementById('edit-obs').value||'Dados editados pelo Admin';
     
+    // Encontrar o vale original para comparar
+    var original=null;
+    for(var i=0;i<dadosBrutos.length;i++){
+        if(dadosBrutos[i]['ChaveUnica']===chave){original=dadosBrutos[i];break;}
+    }
+    
+    // Construir log de alterações
+    var log='';
+    var agora=new Date().toLocaleString('pt-BR');
+    log+='['+agora+' por '+usuarioAtual+'] ';
+    
+    if(original){
+        var mudancas=[];
+        var crachaAntigo=original['Cracha']||'';
+        var valorAntigo=original['ValorVale']||'';
+        var motivoAntigo=original['Motivo']||'';
+        var dataAntiga='';var dv=parseInt(original['DataVale']);if(!isNaN(dv)){var d=new Date((dv-25569+1)*86400*1000);dataAntiga=d.toISOString().split('T')[0];}
+        
+        if(cracha&&cracha!==crachaAntigo)mudancas.push('Crachá: '+crachaAntigo+' → '+cracha);
+        if(valor&&valor!==valorAntigo)mudancas.push('Valor: R$ '+valorAntigo+' → R$ '+valor);
+        if(motivo&&motivo!==motivoAntigo)mudancas.push('Motivo: '+motivoAntigo+' → '+motivo);
+        if(data&&data!==dataAntiga)mudancas.push('Data: '+dataAntiga+' → '+data);
+        
+        if(mudancas.length>0)log+=mudancas.join(' | ');
+        else log+='Nenhuma alteração detectada';
+    }else{
+        log+='Vale editado (dados originais não encontrados)';
+    }
+    
+    // Concatenar com log existente
+    var logAnterior=original['LogEdicoes']||'';
+    if(logAnterior)log=logAnterior+'\n'+log;
+    
     var dataExcel='';
     if(data){var d=new Date(data+'T00:00:00');dataExcel=Math.round((d.getTime()/86400000)+25569)+'';}
     
@@ -556,7 +597,8 @@ function salvarEdicao(){
             Cracha_Editado:cracha,
             DataVale_Editada:dataExcel,
             Valor_Editado:valor,
-            Motivo_Editado:motivo
+            Motivo_Editado:motivo,
+            Log_Edicoes:log
         })
     })
     .then(r=>r.json())
@@ -568,6 +610,7 @@ function salvarEdicao(){
                 if(motivo)dadosBrutos[i]['Motivo']=motivo;
                 dadosBrutos[i]['Status_Aprovacao']='Editado';
                 dadosBrutos[i]['Observacao_Regional']=obs;
+                dadosBrutos[i]['LogEdicoes']=log;
                 break;
             }
         }
