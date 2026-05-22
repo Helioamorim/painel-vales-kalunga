@@ -419,7 +419,7 @@ function aplicarFiltros(){
     if(p){document.getElementById('periodo-info').textContent=p.inicio.toLocaleDateString('pt-BR')+' a '+p.fim.toLocaleDateString('pt-BR');d=d.filter(i=>{var de=parseInt(i['DataVale']);if(isNaN(de))return false;var dt=new Date((de-25569)*86400*1000);return dt>=p.inicio&&dt<=p.fim;});}
     else{document.getElementById('periodo-info').textContent='Todos os períodos';}
     
-    if(tipoAcesso==='regional'&&lf!=='todos')d=d.filter(i=>i['Loja']===lf);
+    if((tipoAcesso==='regional'||tipoAcesso==='admin')&&lf!=='todos')d=d.filter(i=>i['Loja']===lf);
     if(sf!=='todos')d=d.filter(i=>(i['Status_Aprovacao']||'Pendente')===sf);
     if(filtrandoAlertas)d=d.filter(i=>{var s=getStatus(i['DataVale'],i['HoraInicio']);return s.classe!=='status-ok';});
     
