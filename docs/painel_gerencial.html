@@ -230,7 +230,7 @@ function ordenarTabela(coluna){
         return va<vb?1:-1;
     });
     carregarTabelas(dados);
-}function filtrarAlertas(e){
+function filtrarAlertas(e){
     e.stopPropagation();
     filtrandoAlertas=!filtrandoAlertas;
     var card=document.querySelector('.stat-card.alerta');
