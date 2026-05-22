@@ -267,7 +267,7 @@ function abrirModalAprovacao(chaveUnica, loja, dataVale, motivo, valor, statusAt
     
     h+='<input type="hidden" id="aprov-chave" value="'+chaveUnica+'">';
     
-       var podeAprovar=(tipoAcesso==='regional'||(tipoAcesso==='admin'&&adminNivel==='master'));
+    var podeAprovar=(tipoAcesso==='regional'||(tipoAcesso==='admin'&&adminNivel==='master'));
     var podeEditar=(tipoAcesso==='admin'&&(adminNivel==='master'||adminNivel==='editor'));
     
     if(podeAprovar){
@@ -297,15 +297,24 @@ function abrirModalAprovacao(chaveUnica, loja, dataVale, motivo, valor, statusAt
         if(respostaLoja)h+='<div class="historico-item">🏪 Loja: '+respostaLoja+'</div>';
         h+='</div>';
     }
-    var logEdicoes=logEdicoes||'';
-if(logEdicoes){
-    h+='<div class="historico-status"><strong>📝 Log de Edições:</strong>';
-    var linhas=logEdicoes.split('\n');
-    linhas.forEach(function(linha){
-        h+='<div class="historico-item" style="font-size:0.75em;">'+linha+'</div>';
-    });
-    h+='</div>';
-}
+    
+    // Buscar log de edições
+    var logEdicoes='';
+    for(var j=0;j<dadosBrutos.length;j++){
+        if(dadosBrutos[j]['ChaveUnica']===chaveUnica){
+            logEdicoes=dadosBrutos[j]['LogEdicoes']||'';
+            break;
+        }
+    }
+    if(logEdicoes){
+        h+='<div class="historico-status"><strong>📝 Histórico de Edições:</strong>';
+        var linhas=logEdicoes.split('\n');
+        linhas.forEach(function(linha){
+            h+='<div class="historico-item" style="font-size:0.75em;color:#555;">'+linha+'</div>';
+        });
+        h+='</div>';
+    }
+    
     document.getElementById('modal-titulo').textContent='📋 Aprovação - '+loja;
     document.getElementById('modal-body').innerHTML=h;
     document.getElementById('modal-overlay').classList.add('ativo');
@@ -380,11 +389,26 @@ function enviarRespostaLoja(){
 function fecharModal(){document.getElementById('modal-overlay').classList.remove('ativo');}
 document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===this)fecharModal();});
 
-function aplicarFiltros(){var mr=document.getElementById('mes-ref').value;var lf=document.getElementById('filtro-loja')?.value||'todos';var p=gp(mr);var d=dadosBrutos;if(tipoAcesso==='loja')d=d.filter(i=>i['Loja']===usuarioAtual||i['Loja'].indexOf(usuarioAtual)>=0);else if(tipoAcesso==='regional')d=d.filter(i=>i['Regional']===usuarioAtual);if(p){document.getElementById('periodo-info').textContent=p.inicio.toLocaleDateString('pt-BR')+' a '+p.fim.toLocaleDateString('pt-BR');d=d.filter(i=>{var de=parseInt(i['DataVale']);if(isNaN(de))return false;var dt=new Date((de-25569)*86400*1000);return dt>=p.inicio&&dt<=p.fim;});}else{document.getElementById('periodo-info').textContent='Todos os períodos';}if(tipoAcesso==='regional'&&lf!=='todos')d=d.filter(i=>i['Loja']===lf);dadosFiltrados=d;carregarTabelas(d);}
-var sf=document.getElementById('filtro-status')?.value||'todos';
-if(sf!=='todos')d=d.filter(i=>(i['Status_Aprovacao']||'Pendente')===sf);
+function aplicarFiltros(){
+    var mr=document.getElementById('mes-ref').value;
+    var lf=document.getElementById('filtro-loja')?.value||'todos';
+    var sf=document.getElementById('filtro-status')?.value||'todos';
+    var p=gp(mr);
+    var d=dadosBrutos;
+    
+    if(tipoAcesso==='loja')d=d.filter(i=>i['Loja']===usuarioAtual||i['Loja'].indexOf(usuarioAtual)>=0);
+    else if(tipoAcesso==='regional')d=d.filter(i=>i['Regional']===usuarioAtual);
+    
+    if(p){document.getElementById('periodo-info').textContent=p.inicio.toLocaleDateString('pt-BR')+' a '+p.fim.toLocaleDateString('pt-BR');d=d.filter(i=>{var de=parseInt(i['DataVale']);if(isNaN(de))return false;var dt=new Date((de-25569)*86400*1000);return dt>=p.inicio&&dt<=p.fim;});}
+    else{document.getElementById('periodo-info').textContent='Todos os períodos';}
+    
+    if(tipoAcesso==='regional'&&lf!=='todos')d=d.filter(i=>i['Loja']===lf);
+    if(sf!=='todos')d=d.filter(i=>(i['Status_Aprovacao']||'Pendente')===sf);
+    if(filtrandoAlertas)d=d.filter(i=>{var s=getStatus(i['DataVale'],i['HoraInicio']);return s.classe!=='status-ok';});
+    
+    dadosFiltrados=d;carregarTabelas(d);
+}
 
-if(filtrandoAlertas)d=d.filter(i=>{var s=getStatus(i['DataVale'],i['HoraInicio']);return s.classe!=='status-ok';});
 
 function carregarDashboard(d){var html='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:8px;">';var tg=0,qg=0;regionais.forEach(function(regional){var lr={},tr=0,qr=0;d.filter(function(i){return i['Regional']===regional;}).forEach(function(i){var l=i['Loja']||'Sem loja';var v=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;if(!lr[l])lr[l]={qtd:0,total:0};lr[l].qtd++;lr[l].total+=v;tr+=v;qr++;});tg+=tr;qg+=qr;html+='<div class="dash-card"><div class="dash-card-header"><strong>👤 '+regional+'</strong><br><span>'+qr+' vales | '+fm(tr)+'</span></div><table style="font-size:10px;width:100%;"><thead><tr><th>Loja</th><th>QTD</th><th>Valor</th></tr></thead><tbody>';Object.keys(lr).sort().forEach(function(l){html+='<tr><td style="font-size:9px;">'+l+'</td><td>'+lr[l].qtd+'</td><td class="valor" style="font-size:9px;">'+fm(lr[l].total)+'</td></tr>';});html+='<tr style="font-weight:bold;background:#e6f0ff;"><td>TOTAL</td><td>'+qr+'</td><td class="valor">'+fm(tr)+'</td></tr></tbody></table></div>';});html+='</div><div style="text-align:center;padding:12px;background:#003366;color:white;border-radius:10px;margin:10px;font-size:1.1em;"><strong>💰 TOTAL GERAL: '+qg+' vales | '+fm(tg)+'</strong></div>';document.getElementById('tabela-dashboard').innerHTML=html;}
 
