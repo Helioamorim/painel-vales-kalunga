@@ -281,7 +281,22 @@ function abrirModalAprovacao(chaveUnica, loja, dataVale, motivo, valor, statusAt
     h+='<p><span>Motivo:</span> '+motivo+'</p>';
     h+='<p><span>Valor:</span> '+valor+'</p>';
     h+='<p><span>Status Atual:</span> <span class="status-'+(statusAtual||'pendente').toLowerCase()+'">'+(statusAtual||'Pendente')+'</span></p>';
-    h+='</div>';
+
+// Buscar Data Envio Financeiro
+var dataEnvio='';
+for(var j=0;j<dadosBrutos.length;j++){
+    if(dadosBrutos[j]['ChaveUnica']===chaveUnica){
+        dataEnvio=dadosBrutos[j]['DataEnvioFin']||'';
+        break;
+    }
+}
+if(dataEnvio&&dataEnvio!==''){
+    h+='<p><span>Data Envio Financeiro:</span> '+ed(dataEnvio)+'</p>';
+}else{
+    h+='<p style="color:#e67e22;font-size:0.85em;">📌 Será enviado ao financeiro na próxima data</p>';
+}
+
+h+='</div>';
     
     h+='<input type="hidden" id="aprov-chave" value="'+chaveUnica+'">';
     
