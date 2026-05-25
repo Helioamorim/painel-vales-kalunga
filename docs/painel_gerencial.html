@@ -424,8 +424,14 @@ document.getElementById('modal-overlay').addEventListener('click',function(e){if
 
 function aplicarFiltros(){
     var mr=document.getElementById('mes-ref').value;
-    if(tipoAcesso==='regional'||tipoAcesso==='admin')popularDropdownLoja();
+    // Salvar valor atual do filtro de loja
     var lf=document.getElementById('filtro-loja')?.value||'todos';
+    // Recriar dropdown preservando o valor
+    if(tipoAcesso==='regional'||tipoAcesso==='admin'){
+        popularDropdownLoja();
+        if(lf!=='todos')document.getElementById('filtro-loja').value=lf;
+    }
+    lf=document.getElementById('filtro-loja')?.value||'todos';
     var sf=document.getElementById('filtro-status')?.value||'todos';
     var p=gp(mr);
     var d=dadosBrutos;
@@ -442,7 +448,6 @@ function aplicarFiltros(){
     
     dadosFiltrados=d;carregarTabelas(d);
 }
-
 
 function carregarDashboard(d){var html='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:8px;">';var tg=0,qg=0;regionais.forEach(function(regional){var lr={},tr=0,qr=0;d.filter(function(i){return i['Regional']===regional;}).forEach(function(i){var l=i['Loja']||'Sem loja';var v=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;if(!lr[l])lr[l]={qtd:0,total:0};lr[l].qtd++;lr[l].total+=v;tr+=v;qr++;});tg+=tr;qg+=qr;html+='<div class="dash-card"><div class="dash-card-header"><strong>👤 '+regional+'</strong><br><span>'+qr+' vales | '+fm(tr)+'</span></div><table style="font-size:10px;width:100%;"><thead><tr><th>Loja</th><th>QTD</th><th>Valor</th></tr></thead><tbody>';Object.keys(lr).sort().forEach(function(l){html+='<tr><td style="font-size:9px;">'+l+'</td><td>'+lr[l].qtd+'</td><td class="valor" style="font-size:9px;">'+fm(lr[l].total)+'</td></tr>';});html+='<tr style="font-weight:bold;background:#e6f0ff;"><td>TOTAL</td><td>'+qr+'</td><td class="valor">'+fm(tr)+'</td></tr></tbody></table></div>';});html+='</div><div style="text-align:center;padding:12px;background:#003366;color:white;border-radius:10px;margin:10px;font-size:1.1em;"><strong>💰 TOTAL GERAL: '+qg+' vales | '+fm(tg)+'</strong></div>';document.getElementById('tabela-dashboard').innerHTML=html;}
 
