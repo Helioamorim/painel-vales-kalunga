@@ -133,7 +133,7 @@
     <!-- ========== TELA VALES ========== -->
     <div id="tela-vales">
         <div class="header"><h1>📊 Painel de Vales</h1><p style="font-size:0.75em" id="header-info"></p></div>
-        <div class="filtros-topo"><label>📅 Período:</label><select id="mes-ref"><option value="todos" selected>📋 Todos</option><option value="2026-01">Jan/26</option><option value="2026-02">Fev/26</option><option value="2026-03">Mar/26</option><option value="2026-04">Abr/26</option><option value="2026-05">Mai/26</option><option value="2026-06">Jun/26</option><option value="2026-07">Jul/26</option><option value="2026-08">Ago/26</option><option value="2026-09">Set/26</option><option value="2026-10">Out/26</option><option value="2026-11">Nov/26</option><option value="2026-12">Dez/26</option></select><span id="filtro-loja-container"><label>🏪 Loja:</label><select id="filtro-loja"><option value="todos">Todas</option></select></span><button onclick="aplicarFiltros()">🔍 Filtrar</button><button onclick="filtrandoAlertas=false;var c=document.querySelector('.stat-card.alerta');if(c){c.style.background='white';c.style.border='none';};aplicarFiltros();" style="background:#888;color:white;border:none;padding:6px 10px;border-radius:6px;font-size:0.7em;cursor:pointer;margin-left:4px;">✕ Limpar</button><label style="margin-left:8px;">📋 Status:</label><select id="filtro-status" onchange="aplicarFiltros()" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-size:0.75em;"><option value="todos">Todos</option><option value="Pendente">⬜ Pendente</option><option value="Aprovado">🟢 Aprovado</option><option value="Recusado">🔴 Recusado</option><option value="Esclarecimento">🟡 Esclarecimento</option><option value="Editado">🔵 Editado</option></select><span style="font-size:0.7em;color:#666;" id="periodo-info">Todos os períodos</span></div>
+        <div class="filtros-topo"><label>📅 Período:</label><select id="mes-ref"><option value="todos" selected>📋 Todos</option><option value="2026-01">Jan/26</option><option value="2026-02">Fev/26</option><option value="2026-03">Mar/26</option><option value="2026-04">Abr/26</option><option value="2026-05">Mai/26</option><option value="2026-06">Jun/26</option><option value="2026-07">Jul/26</option><option value="2026-08">Ago/26</option><option value="2026-09">Set/26</option><option value="2026-10">Out/26</option><option value="2026-11">Nov/26</option><option value="2026-12">Dez/26</option></select><span id="filtro-loja-container"><label>🏪 Loja:</label><select id="filtro-loja"><option value="todos">Todas</option></select></span><button onclick="aplicarFiltros()">🔍 Filtrar</button><button onclick="filtrandoAlertas=false;var c=document.querySelector('.stat-card.alerta');if(c){c.style.background='white';c.style.border='none';};aplicarFiltros();" style="background:#888;color:white;border:none;padding:6px 10px;border-radius:6px;font-size:0.7em;cursor:pointer;margin-left:4px;">✕ Limpar</button><label style="margin-left:8px;">📋 Status:</label><select id="filtro-status" onchange="aplicarFiltros()" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-size:0.75em;"><option value="todos">Todos</option><option value="Pendente">⬜ Pendente</option><option value="Aprovado">🟢 Aprovado</option><option value="Recusado">🔴 Recusado</option><option value="Esclarecimento">🟡 Esclarecimento</option><option value="Editado">🔵 Editado</option><option value="Abonado">💰 Abonado</option><option value="Não Localizado">🔍 Não Localizado</option><option value="Aguardando Abono">⏳ Aguardando Abono</option></select><span style="font-size:0.7em;color:#666;" id="periodo-info">Todos os períodos</span></div>
         <div class="alerta-bar" id="alerta-bar">⚠️ Atenção: <span id="alerta-texto"></span></div>
         <div style="background:#e8f5e9;color:#2e7d32;padding:6px 15px;margin:0 10px 5px 10px;border-radius:6px;text-align:center;font-size:0.7em;" id="status-atualizacao">🔄 Última atualização: <span id="ultima-atualizacao">--</span> | Próxima atualização: <span id="proxima-atualizacao">em 15 min</span></div>
         <div class="stats"><div class="stat-card"><div class="label">Total Vales</div><div class="valor" id="total-vales">0</div></div><div class="stat-card total"><div class="label">Valor Total</div><div class="valor" id="valor-total">R$ 0,00</div></div><div class="stat-card" id="card-lojas"><div class="label">Lojas</div><div class="valor" id="total-lojas">0</div></div><div class="stat-card alerta" onclick="filtrarAlertas()" style="cursor:pointer;"><div class="label">⚠️ Alertas</div><div class="valor" id="total-alertas">0</div></div></div>
@@ -194,7 +194,8 @@ const ADMINS={
     'Elaine Cavalcanti':{nivel:'editor'},
     'Manuelisa Gualberto':{nivel:'editor'},
     'Hoslei Pimenta':{nivel:'visualizador'},
-    'Juliano Oliveira':{nivel:'visualizador'}
+    'Juliano Oliveira':{nivel:'visualizador'},
+    'Tesouraria':{nivel:'tesouraria'}
 };
 var adminNivel=null;
 
@@ -274,13 +275,13 @@ function abrirModalLoja(loja){var d=dadosFiltrados.filter(i=>i['Loja']===loja);d
 
 const URL_APROVACAO = 'https://defaulta375ca2950b6471c8c9dc95b1300d8.1c.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/f8865e8b8dd0480c87275c5d663a6245/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=nuzmGtK1XMMfhAE_MTgoHqO8SdTa-Tqsh4cwKNUFQDU';
 const URL_ATUALIZAR_SENHA = 'https://defaulta375ca2950b6471c8c9dc95b1300d8.1c.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/133915db2a0f4d91a508dd5b4654613d/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=BErzuvTFVrfCvGO6DwHTlhkXcM6kH2AE52mSvpaw7pg'
-function abrirModalAprovacao(chaveUnica, loja, dataVale, motivo, valor, statusAtual, obsRegional, respostaLoja, cracha, aprovador){
+function abrirModalAprovacao(chaveUnica, loja, dataVale, motivo, valor, statusAtual, obsRegional, respostaLoja, cracha, aprovador, situacao){
     var h='<div class="modal-aprovacao-info">';
     h+='<p><span>Loja:</span> '+loja+'</p>';
     h+='<p><span>Data do Vale:</span> '+dataVale+'</p>';
     h+='<p><span>Motivo:</span> '+motivo+'</p>';
     h+='<p><span>Valor:</span> '+valor+'</p>';
-    h+='<p><span>Status Atual:</span> <span class="status-'+(statusAtual||'pendente').toLowerCase()+'">'+(statusAtual||'Pendente')+'</span></p>';
+    h+='<p><span>Situação:</span> '+(situacao||'⏳ Aguardando Abono')+'</p>';
 
 // Buscar Data Envio Financeiro
 var dataEnvio='';
@@ -317,7 +318,13 @@ var podeEditar=(tipoAcesso==='admin'&&(adminNivel==='master'||adminNivel==='edit
         h+='<button class="btn-aprovar" style="background:#3498db;" onclick="abrirModalEditar(\''+chaveUnica+'\',\''+dataVale+'\',\''+(cracha||'')+'\',\''+(valor||'').replace('R$ ','').replace(/\./g,'').replace(',','.')+'\',\''+(motivo||'').replace(/'/g,"\\'")+'\')">✏️ Editar Vale</button>';
         h+='</div>';
     }
-    
+    if(tipoAcesso==='admin'&&adminNivel==='tesouraria'){
+    h+='<div class="modal-aprovacao-botoes" style="margin-top:10px;">';
+    h+='<button class="btn-aprovar" style="background:#4a0;" onclick="atualizarSituacao(\'Abonado\')">💰 Abonado</button>';
+    h+='<button class="btn-recusar" style="background:#888;" onclick="atualizarSituacao(\'Não Localizado\')">🔍 Não Localizado</button>';
+    h+='<button style="background:#e67e22;color:white;border:none;padding:12px 25px;border-radius:8px;cursor:pointer;font-weight:600;" onclick="atualizarSituacao(\'Aguardando Abono\')">⏳ Aguardando Abono</button>';
+    h+='</div>';
+}
     if(tipoAcesso==='loja'&&(statusAtual==='Esclarecimento'||statusAtual==='Recusado')){
         h+='<label><strong>Responder ao Regional:</strong></label>';
         h+='<textarea class="modal-aprovacao-textarea" id="aprov-resposta" placeholder="Sua resposta...">'+(respostaLoja||'')+'</textarea>';
@@ -473,13 +480,14 @@ function carregarTabelas(d){
     h+='<th onclick="ordenarTabela(\'ValorVale\')" style="cursor:pointer;">Valor '+(colunaOrdenacao==='ValorVale'?(ordemAsc?'▲':'▼'):'')+'</th>';
     h+='<th>Data Envio Fin.</th>';
     h+='<th onclick="ordenarTabela(\'Status_Aprovacao\')" style="cursor:pointer;">Aprovação</th>';
-    h+='<th>Status</th>';
+h+='<th>Situação</th>';
+h+='<th>Status</th>';
     h+='</tr></thead><tbody>';
     
     d.forEach(i=>{
         var s=getStatus(i['DataVale'],i['HoraInicio']);
         var c=s.classe!=='status-ok'?' style="background:#fff9e6;"':'';
-      h+='<tr'+c+' style="cursor:pointer;" onclick="abrirModalAprovacao(\''+(i['ChaveUnica']||'')+'\',\''+(i['Loja']||'')+'\',\''+ed(i['DataVale'])+'\',\''+(i['Motivo']||'').replace(/'/g,"\\'")+'\',\''+fm(parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0)+'\',\''+(i['Status_Aprovacao']||'')+'\',\''+(i['Observacao_Regional']||'').replace(/'/g,"\\'")+'\',\''+(i['Resposta_Loja']||'').replace(/'/g,"\\'")+'\',\''+(i['Cracha']||'')+'\',\''+(i['Aprovador']||'')+'\')"><td>'+(i['Loja']||'')+'</td><td>'+edh(i['HoraInicio'])+'</td><td>'+ed(i['DataVale'])+'</td><td>'+(i['Cracha']||'-')+'</td><td>'+(i['Motivo']||'')+'</td><td class="valor">'+fm(parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0)+'</td><td>'+(i['DataEnvioFin']&&i['DataEnvioFin']!==''?ed(i['DataEnvioFin']):'-')+'</td><td class="status-'+(i['Status_Aprovacao']||'Pendente').toLowerCase()+'">'+(i['Status_Aprovacao']||'⬜ Pendente')+'</td><td class="'+s.classe+'">'+s.texto+'</td></tr>';});
+      h+='<tr'+c+' style="cursor:pointer;" onclick="abrirModalAprovacao(\''+(i['ChaveUnica']||'')+'\',\''+(i['Loja']||'')+'\',\''+ed(i['DataVale'])+'\',\''+(i['Motivo']||'').replace(/'/g,"\\'")+'\',\''+fm(parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0)+'\',\''+(i['Status_Aprovacao']||'')+'\',\''+(i['Observacao_Regional']||'').replace(/'/g,"\\'")+'\',\''+(i['Resposta_Loja']||'').replace(/'/g,"\\'")+'\',\''+(i['Cracha']||'')+'\',\''+(i['Aprovador']||'')+'\',\''+(i['Situacao']||'')+'\')"><td>'+(i['Loja']||'')+'</td><td>'+edh(i['HoraInicio'])+'</td><td>'+ed(i['DataVale'])+'</td><td>'+(i['Cracha']||'-')+'</td><td>'+(i['Motivo']||'')+'</td><td class="valor">'+fm(parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0)+'</td><td>'+(i['DataEnvioFin']&&i['DataEnvioFin']!==''?ed(i['DataEnvioFin']):'-')+'</td><td class="status-'+(i['Status_Aprovacao']||'Pendente').toLowerCase()+'">'+(i['Status_Aprovacao']||'⬜ Pendente')+'</td><td>'+(i['Situacao']||'⏳ Aguardando')+'</td><td class="'+s.classe+'">'+s.texto+'</td></tr>';});
     h+='</tbody></table>';document.getElementById('tabela-base').innerHTML=h;
     
     var ma=[];Object.keys(pm).forEach(m=>ma.push({motivo:m,qtd:pm[m].qtd,total:pm[m].total}));ma.sort((a,b)=>b.total-a.total);
@@ -587,6 +595,10 @@ function abrirModalCobranca(loja){
 }
 
 // ============ LOGIN ============
+function atualizarSituacao(situacao){
+    var chave=document.getElementById('aprov-chave').value;
+    fetch(URL_APROVACAO,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ChaveUnica:chave,Status_Aprovacao:'',Observacao_Regional:'',Resposta_Loja:'',Aprovador:usuarioAtual,Data_Aprovacao:new Date().toISOString().split('T')[0],Cracha_Editado:'',DataVale_Editada:'',Valor_Editado:'',Motivo_Editado:'',Log_Edicoes:'',Situacao:situacao})}).then(r=>r.json()).then(d=>{for(var i=0;i<dadosBrutos.length;i++){if(dadosBrutos[i]['ChaveUnica']===chave){dadosBrutos[i]['Situacao']=situacao;break;}}carregarTabelas(dadosFiltrados);alert('✅ Situação atualizada: '+situacao);fecharModal();}).catch(e=>alert('❌ Erro ao atualizar'));
+}
 function abrirModalEditar(chave, dataVale, cracha, valor, motivo){
     document.getElementById('edit-chave').value=chave;
     document.getElementById('edit-data').value=dataVale;
