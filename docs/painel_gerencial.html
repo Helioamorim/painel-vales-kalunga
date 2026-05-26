@@ -124,7 +124,7 @@
     <p style="font-size:0.8em;color:#888;margin-bottom:10px;" id="menu-usuario"></p>
     <div class="app-item ativo" id="menu-vales" onclick="abrirApp('vales')"><span>📊</span> Painel de Vales</div>
     <div class="app-item" id="menu-cobranca" onclick="abrirApp('cobranca')"><span>💰</span> Cobrança de Boletos</div>
-    <div class="app-item" onclick="window.open('https://kalungacombr-my.sharepoint.com/:u:/g/personal/helioamorim_kalunga_com_br/IQDddOWZ2CO2RK248xxvG6qSAajGVJnHfaMzfkYum9rHuSA?e=2vuodW','_blank')"><span>📈</span> Relatório Abono/CTRL H</div>
+    <div class="app-item" id="menu-relatorio" onclick="abrirApp('relatorio')"><span>📈</span> Relatório Abono/CTRL H</div>
     <div class="app-item" onclick="window.open('https://helioamorim.github.io/painel-vales-kalunga/relatorio-abono.html','_blank')"><span>📈</span> Relatório Abono/CTRL H</div>
     <hr style="margin:10px 0;border-color:#eee;">
     <div class="app-item" onclick="abrirModalSenha()"><span>🔐</span> Alterar Minha Senha</div>
@@ -187,6 +187,10 @@
 </div>
     
     <div class="footer">🏢 Controles Internos • Portal Gerencial</div>
+</div>
+<!-- ========== TELA RELATÓRIO ========== -->
+<div id="tela-relatorio" style="display:none;">
+    <iframe src="https://kalungacombr-my.sharepoint.com/:u:/g/personal/helioamorim_kalunga_com_br/IQDddOWZ2CO2RK248xxvG6qSAajGVJnHfaMzfkYum9rHuSA?e=2vuodW" style="width:100%;height:calc(100vh - 50px);border:none;"></iframe>
 </div>
 <div class="modal-overlay" id="modal-overlay"><div class="modal"><div class="modal-header"><h2 id="modal-titulo">Detalhes</h2><button class="modal-close" onclick="fecharModal()">✕</button></div><div class="modal-body" id="modal-body"></div></div></div>
 <script>
@@ -263,13 +267,15 @@ function abrirApp(app){
     appAtual=app;
     document.getElementById('menu-vales').classList.remove('ativo');
     document.getElementById('menu-cobranca').classList.remove('ativo');
+    document.getElementById('menu-relatorio').classList.remove('ativo');
     document.getElementById('menu-'+app).classList.add('ativo');
     document.getElementById('tela-vales').style.display=app==='vales'?'block':'none';
     document.getElementById('tela-cobranca').style.display=app==='cobranca'?'block':'none';
-    document.getElementById('topbar-titulo').textContent=app==='vales'?'📊 Painel de Vales':'💰 Cobrança de Boletos';
+    document.getElementById('tela-relatorio').style.display=app==='relatorio'?'block':'none';
+    document.getElementById('topbar-titulo').textContent=app==='vales'?'📊 Painel de Vales':(app==='cobranca'?'💰 Cobrança de Boletos':'📈 Relatório Abono/CTRL H');
     toggleMenu();
-   if(app==='vales'){aplicarFiltros();}
-else{filtrarCobranca();popularDropdownCob();}
+    if(app==='vales'){aplicarFiltros();}
+    else if(app==='cobranca'){filtrarCobranca();popularDropdownCob();}
 }
 
 // ============ VALES ============
