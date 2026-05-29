@@ -314,8 +314,9 @@ function abrirApp(app){
     document.getElementById('topbar-titulo').textContent=app==='vales'?'📊 Painel de Vales':'💰 Cobrança de Boletos';
     if(app==='vales'){aplicarFiltros();}
     else{filtrarCobranca();popularDropdownCob();}
-}
-toggleMenu();
+    }
+    toggleMenu();
+} 
 // ============ VALES ============
 function abrirModalLoja(loja){var d=dadosFiltrados.filter(i=>i['Loja']===loja);d.sort((a,b)=>(parseFloat(b['HoraInicio'])||0)-(parseFloat(a['HoraInicio'])||0));var t=d.reduce((s,i)=>s+(parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0),0);var h='<h3>📋 '+loja+' - '+d.length+' vales</h3><br><table><thead><tr><th>Data/Hora Solic.</th><th>Data do Vale</th><th>Crachá</th><th>Motivo</th><th>Tipo Falha</th><th>Valor</th><th>Data Envio Fin.</th><th>Status</th></tr></thead><tbody>';d.forEach(i=>{var s=getStatus(i['DataVale'],i['HoraInicio']);h+='<tr><td>'+edh(i['HoraInicio'])+'</td><td>'+ed(i['DataVale'])+'</td><td>'+(i['Cracha']||'')+'</td><td>'+(i['Motivo']||'')+'</td><td>'+(i['TipoFalha']||'')+'</td><td class="valor">'+fm(parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0)+'</td><td>'+(i['DataEnvioFin']&&i['DataEnvioFin']!==''?ed(i['DataEnvioFin']):'-')+'</td><td class="'+s.classe+'">'+s.texto+'</td></tr>';});h+='<tr style="font-weight:bold;background:#e6f0ff;"><td colspan="7">TOTAL</td><td class="valor">'+fm(t)+'</td></tr></tbody></table>';document.getElementById('modal-titulo').textContent='🏪 '+loja;document.getElementById('modal-body').innerHTML=h;document.getElementById('modal-overlay').classList.add('ativo');}
 
