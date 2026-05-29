@@ -125,6 +125,7 @@
     <div class="app-item ativo" id="menu-vales" onclick="abrirApp('vales')"><span>📊</span> Painel de Vales</div>
     <div class="app-item" id="menu-cobranca" onclick="abrirApp('cobranca')"><span>💰</span> Cobrança de Boletos</div>
     <div class="app-item" id="menu-relatorio" onclick="abrirApp('relatorio')"><span>📈</span> Relatório Abono/CTRL H</div>
+    <div class="app-item" id="menu-duvidas" onclick="abrirApp('duvidas')"><span>📚</span> Central de Dúvidas</div>
     <hr style="margin:10px 0;border-color:#eee;">
     <div class="app-item" onclick="abrirModalSenha()"><span>🔐</span> Alterar Minha Senha</div>
     <div class="app-item" id="menu-gerenciar-senhas" onclick="abrirModalSenhas()" style="display:none;"><span>🔑</span> Gerenciar Senhas</div>
@@ -287,30 +288,34 @@ function abrirApp(app){
     document.getElementById('menu-vales').classList.remove('ativo');
     document.getElementById('menu-cobranca').classList.remove('ativo');
     document.getElementById('menu-relatorio').classList.remove('ativo');
-    document.getElementById('menu-'+app).classList.add('ativo');
+    document.getElementById('menu-duvidas').classList.remove('ativo');  // ← ADICIONE ISSO
     
     // Remover iframe se existir
     var ifr=document.getElementById('iframe-relatorio');
     if(ifr)ifr.remove();
     
+    if(app==='relatorio' || app==='duvidas'){
+    document.getElementById('tela-vales').style.display='none';
+    document.getElementById('tela-cobranca').style.display='none';
+    var iframe=document.createElement('iframe');
     if(app==='relatorio'){
-        document.getElementById('tela-vales').style.display='none';
-        document.getElementById('tela-cobranca').style.display='none';
-        var iframe=document.createElement('iframe');
         iframe.src='https://kalunga-relatorio-abono.pages.dev';
-        iframe.id='iframe-relatorio';
-        iframe.style.cssText='width:100%;height:calc(100vh - 50px);border:none;position:absolute;top:50px;left:0;z-index:50;';
-        document.getElementById('app-screen').appendChild(iframe);
         document.getElementById('topbar-titulo').textContent='📈 Relatório Abono/CTRL H';
-    } else {
-        document.getElementById('tela-vales').style.display=app==='vales'?'block':'none';
-        document.getElementById('tela-cobranca').style.display=app==='cobranca'?'block':'none';
-        document.getElementById('topbar-titulo').textContent=app==='vales'?'📊 Painel de Vales':'💰 Cobrança de Boletos';
-        if(app==='vales'){aplicarFiltros();}
-        else{filtrarCobranca();popularDropdownCob();}
+    } else if(app==='duvidas'){
+        iframe.src='https://tiraduvidaskalunga.pages.dev';
+        document.getElementById('topbar-titulo').textContent='📚 Central de Dúvidas';
     }
-    toggleMenu();
+    iframe.id='iframe-relatorio';
+    iframe.style.cssText='width:100%;height:calc(100vh - 50px);border:none;position:absolute;top:50px;left:0;z-index:50;';
+    document.getElementById('app-screen').appendChild(iframe);
+} else {
+    document.getElementById('tela-vales').style.display=app==='vales'?'block':'none';
+    document.getElementById('tela-cobranca').style.display=app==='cobranca'?'block':'none';
+    document.getElementById('topbar-titulo').textContent=app==='vales'?'📊 Painel de Vales':'💰 Cobrança de Boletos';
+    if(app==='vales'){aplicarFiltros();}
+    else{filtrarCobranca();popularDropdownCob();}
 }
+toggleMenu();
 // ============ VALES ============
 function abrirModalLoja(loja){var d=dadosFiltrados.filter(i=>i['Loja']===loja);d.sort((a,b)=>(parseFloat(b['HoraInicio'])||0)-(parseFloat(a['HoraInicio'])||0));var t=d.reduce((s,i)=>s+(parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0),0);var h='<h3>📋 '+loja+' - '+d.length+' vales</h3><br><table><thead><tr><th>Data/Hora Solic.</th><th>Data do Vale</th><th>Crachá</th><th>Motivo</th><th>Tipo Falha</th><th>Valor</th><th>Data Envio Fin.</th><th>Status</th></tr></thead><tbody>';d.forEach(i=>{var s=getStatus(i['DataVale'],i['HoraInicio']);h+='<tr><td>'+edh(i['HoraInicio'])+'</td><td>'+ed(i['DataVale'])+'</td><td>'+(i['Cracha']||'')+'</td><td>'+(i['Motivo']||'')+'</td><td>'+(i['TipoFalha']||'')+'</td><td class="valor">'+fm(parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0)+'</td><td>'+(i['DataEnvioFin']&&i['DataEnvioFin']!==''?ed(i['DataEnvioFin']):'-')+'</td><td class="'+s.classe+'">'+s.texto+'</td></tr>';});h+='<tr style="font-weight:bold;background:#e6f0ff;"><td colspan="7">TOTAL</td><td class="valor">'+fm(t)+'</td></tr></tbody></table>';document.getElementById('modal-titulo').textContent='🏪 '+loja;document.getElementById('modal-body').innerHTML=h;document.getElementById('modal-overlay').classList.add('ativo');}
 
