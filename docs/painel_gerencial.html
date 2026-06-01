@@ -302,7 +302,8 @@ function abrirApp(app){
         iframe.src='https://kalunga-relatorio-abono.pages.dev';
         document.getElementById('topbar-titulo').textContent='📈 Relatório Abono/CTRL H';
     } else if(app==='duvidas'){
-    iframe.src='https://tiraduvidaskalunga.pages.dev?loja=' + encodeURIComponent(usuarioAtual || 'Anonimo');
+    var user = localStorage.getItem('kalunga_usuario') || usuarioAtual || 'Anonimo';
+iframe.src='https://tiraduvidaskalunga.pages.dev?loja=' + encodeURIComponent(user);
     document.getElementById('topbar-titulo').textContent='📚 Central de Dúvidas';
 }
     iframe.id='iframe-relatorio';
