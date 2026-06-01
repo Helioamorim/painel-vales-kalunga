@@ -301,10 +301,11 @@ function abrirApp(app){
     if(app==='relatorio'){
         iframe.src='https://kalunga-relatorio-abono.pages.dev';
         document.getElementById('topbar-titulo').textContent='📈 Relatório Abono/CTRL H';
-    } else if(app==='duvidas'){
+   } else if(app==='duvidas'){
     var user = localStorage.getItem('kalunga_usuario') || usuarioAtual || 'Anonimo';
-iframe.src='https://tiraduvidaskalunga.pages.dev?loja=' + encodeURIComponent(user);
-    document.getElementById('topbar-titulo').textContent='📚 Central de Dúvidas';
+    var tipo = localStorage.getItem('kalunga_tipo') || tipoAcesso || 'loja';
+    iframe.src='https://tiraduvidaskalunga.pages.dev?loja=' + encodeURIComponent(user) + '&tipo=' + encodeURIComponent(tipo);
+    document.getElementById('topbar-titulo').textContent='📚 Central de Duvidas';
 }
     iframe.id='iframe-relatorio';
     iframe.style.cssText='width:100%;height:calc(100vh - 50px);border:none;position:absolute;top:50px;left:0;z-index:50;';
