@@ -126,6 +126,7 @@
     <div class="app-item" id="menu-cobranca" onclick="abrirApp('cobranca')"><span>💰</span> Cobrança de Boletos</div>
     <div class="app-item" id="menu-relatorio" onclick="abrirApp('relatorio')"><span>📈</span> Relatório Abono/CTRL H</div>
     <div class="app-item" id="menu-duvidas" onclick="abrirApp('duvidas')"><span>📚</span> Central de Dúvidas</div>
+    <div class="app-item" id="menu-uber" onclick="abrirApp('uber')"><span>🚗</span> Uber Corporativo</div>
     <hr style="margin:10px 0;border-color:#eee;">
     <div class="app-item" onclick="abrirModalSenha()"><span>🔐</span> Alterar Minha Senha</div>
     <div class="app-item" id="menu-gerenciar-senhas" onclick="abrirModalSenhas()" style="display:none;"><span>🔑</span> Gerenciar Senhas</div>
@@ -290,34 +291,45 @@ function abrirApp(app){
     document.getElementById('menu-vales').classList.remove('ativo');
     document.getElementById('menu-cobranca').classList.remove('ativo');
     document.getElementById('menu-relatorio').classList.remove('ativo');
-    document.getElementById('menu-duvidas').classList.remove('ativo');  // ← ADICIONE ISSO
+    document.getElementById('menu-duvidas').classList.remove('ativo');
+    document.getElementById('menu-uber').classList.remove('ativo');
+    
+    // Ativar o menu correto
+    if(app==='vales') document.getElementById('menu-vales').classList.add('ativo');
+    else if(app==='cobranca') document.getElementById('menu-cobranca').classList.add('ativo');
+    else if(app==='relatorio') document.getElementById('menu-relatorio').classList.add('ativo');
+    else if(app==='duvidas') document.getElementById('menu-duvidas').classList.add('ativo');
+    else if(app==='uber') document.getElementById('menu-uber').classList.add('ativo');
     
     // Remover iframe se existir
     var ifr=document.getElementById('iframe-relatorio');
     if(ifr)ifr.remove();
     
-    if(app==='relatorio' || app==='duvidas'){
-    document.getElementById('tela-vales').style.display='none';
-    document.getElementById('tela-cobranca').style.display='none';
-    var iframe=document.createElement('iframe');
-    if(app==='relatorio'){
-        iframe.src='https://kalunga-relatorio-abono.pages.dev';
-        document.getElementById('topbar-titulo').textContent='📈 Relatório Abono/CTRL H';
-   } else if(app==='duvidas'){
-    var user = localStorage.getItem('kalunga_usuario') || usuarioAtual || 'Anonimo';
-    var tipo = localStorage.getItem('kalunga_tipo') || tipoAcesso || 'loja';
-    iframe.src='https://tiraduvidaskalunga.pages.dev?loja=' + encodeURIComponent(user) + '&tipo=' + encodeURIComponent(tipo);
-    document.getElementById('topbar-titulo').textContent='📚 Central de Duvidas';
-}
-    iframe.id='iframe-relatorio';
-    iframe.style.cssText='width:100%;height:calc(100vh - 50px);border:none;position:absolute;top:50px;left:0;z-index:50;';
-    document.getElementById('app-screen').appendChild(iframe);
-} else {
-    document.getElementById('tela-vales').style.display=app==='vales'?'block':'none';
-    document.getElementById('tela-cobranca').style.display=app==='cobranca'?'block':'none';
-    document.getElementById('topbar-titulo').textContent=app==='vales'?'📊 Painel de Vales':'💰 Cobrança de Boletos';
-    if(app==='vales'){aplicarFiltros();}
-    else{filtrarCobranca();popularDropdownCob();}
+    if(app==='relatorio' || app==='duvidas' || app==='uber'){
+        document.getElementById('tela-vales').style.display='none';
+        document.getElementById('tela-cobranca').style.display='none';
+        var iframe=document.createElement('iframe');
+        if(app==='relatorio'){
+            iframe.src='https://kalunga-relatorio-abono.pages.dev';
+            document.getElementById('topbar-titulo').textContent='📈 Relatório Abono/CTRL H';
+        } else if(app==='duvidas'){
+            var user = localStorage.getItem('kalunga_usuario') || usuarioAtual || 'Anonimo';
+            var tipo = localStorage.getItem('kalunga_tipo') || tipoAcesso || 'loja';
+            iframe.src='https://tiraduvidaskalunga.pages.dev?loja=' + encodeURIComponent(user) + '&tipo=' + encodeURIComponent(tipo);
+            document.getElementById('topbar-titulo').textContent='📚 Central de Duvidas';
+        } else if(app==='uber'){
+            iframe.src='https://ubercorporativo.pages.dev';
+            document.getElementById('topbar-titulo').textContent='🚗 Uber Corporativo';
+        }
+        iframe.id='iframe-relatorio';
+        iframe.style.cssText='width:100%;height:calc(100vh - 50px);border:none;position:absolute;top:50px;left:0;z-index:50;';
+        document.getElementById('app-screen').appendChild(iframe);
+    } else {
+        document.getElementById('tela-vales').style.display=app==='vales'?'block':'none';
+        document.getElementById('tela-cobranca').style.display=app==='cobranca'?'block':'none';
+        document.getElementById('topbar-titulo').textContent=app==='vales'?'📊 Painel de Vales':'💰 Cobrança de Boletos';
+        if(app==='vales'){aplicarFiltros();}
+        else{filtrarCobranca();popularDropdownCob();}
     }
     toggleMenu();
 } 
@@ -1001,6 +1013,7 @@ setInterval(atualizarContador,30000);
 atualizarContador();
 function autoLogin(){var u=localStorage.getItem('kalunga_usuario');var t=localStorage.getItem('kalunga_tipo');if(u&&t){tipoAcesso=t;usuarioAtual=u;if(tipoAcesso==='admin'&&ADMINS[u])adminNivel=ADMINS[u].nivel;document.getElementById('login-screen').style.display='none';document.getElementById('app-screen').style.display='block';document.getElementById('menu-usuario').textContent=(tipoAcesso==='loja'?'🏪 ':'👤 ')+u;document.getElementById('header-info').textContent=(tipoAcesso==='loja'?'Loja: ':'Regional: ')+u;document.getElementById('header-info-cob').textContent=(tipoAcesso==='loja'?'Loja: ':'Regional: ')+u;if(tipoAcesso==='regional'||tipoAcesso==='admin'){document.getElementById('filtro-loja-container').style.display='';popularDropdownLoja();}else{document.getElementById('filtro-loja-container').style.display='none';}if(tipoAcesso==='loja'){document.getElementById('tab-loja').style.display='none';document.getElementById('card-lojas').style.display='none';}
 if(tipoAcesso==='admin'&&(adminNivel==='master'||adminNivel==='editor')){document.getElementById('menu-gerenciar-senhas').style.display='';}else{document.getElementById('menu-gerenciar-senhas').style.display='none';}
+if(tipoAcesso==='loja'){document.getElementById('menu-uber').style.display='none';}else{document.getElementById('menu-uber').style.display='';}
 popularDropdownCob();if(appAtual==='vales')aplicarFiltros();else filtrarCobranca();}}
 
 function fazerLogin(){
@@ -1023,7 +1036,8 @@ if(tipoAcesso==='admin'&&!ADMINS[v]){document.getElementById('login-erro').style
         document.getElementById('header-info-cob').textContent=(tipoAcesso==='loja'?'Loja: ':(tipoAcesso==='admin'?'Admin: ':'Regional: '))+v;
         if(tipoAcesso==='regional'||tipoAcesso==='admin'){document.getElementById('filtro-loja-container').style.display='';popularDropdownLoja();}else{document.getElementById('filtro-loja-container').style.display='none';}
         if(tipoAcesso==='loja'){document.getElementById('tab-loja').style.display='none';document.getElementById('card-lojas').style.display='none';}else{document.getElementById('tab-loja').style.display='';document.getElementById('card-lojas').style.display='';}
-        if(tipoAcesso==='admin'&&(adminNivel==='master'||adminNivel==='editor')){document.getElementById('menu-gerenciar-senhas').style.display='';}else{document.getElementById('menu-gerenciar-senhas').style.display='none';}
+                            if(tipoAcesso==='admin'&&(adminNivel==='master'||adminNivel==='editor')){document.getElementById('menu-gerenciar-senhas').style.display='';}else{document.getElementById('menu-gerenciar-senhas').style.display='none';}
+        if(tipoAcesso==='loja'){document.getElementById('menu-uber').style.display='none';}else{document.getElementById('menu-uber').style.display='';}
         popularDropdownCob();
         localStorage.setItem('kalunga_usuario',v);localStorage.setItem('kalunga_tipo',tipoAcesso);
         if(appAtual==='vales')aplicarFiltros();else filtrarCobranca();
