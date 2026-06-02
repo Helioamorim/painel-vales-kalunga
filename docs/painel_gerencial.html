@@ -309,8 +309,10 @@ function abrirApp(app){
         document.getElementById('tela-vales').style.display='none';
         document.getElementById('tela-cobranca').style.display='none';
         var iframe=document.createElement('iframe');
-        if(app==='relatorio'){
-            iframe.src='https://kalunga-relatorio-abono.pages.dev';
+                if(app==='relatorio'){
+            var user = localStorage.getItem('kalunga_usuario') || usuarioAtual || '';
+            var tipo = localStorage.getItem('kalunga_tipo') || tipoAcesso || 'loja';
+            iframe.src='https://kalunga-relatorio-abono.pages.dev?loja=' + encodeURIComponent(user) + '&tipo=' + encodeURIComponent(tipo);
             document.getElementById('topbar-titulo').textContent='📈 Relatório Abono/CTRL H';
         } else if(app==='duvidas'){
             var user = localStorage.getItem('kalunga_usuario') || usuarioAtual || 'Anonimo';
