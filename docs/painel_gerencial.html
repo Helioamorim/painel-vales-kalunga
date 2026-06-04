@@ -387,11 +387,8 @@ async function carregarDadosHistoricos(){
     if(historicoCarregado) return;
     try {
         var arquivosHist = [
-            'dados_historicos/2026_01_03.json',
-            'dados_historicos/2025_10_12.json',
-            'dados_historicos/2025_07_09.json',
-            'dados_historicos/2025_04_06.json'
-        ];
+    'https://arquicoshistoricovale.pages.dev/2026_01_03.json'
+];
         for(var i = 0; i < arquivosHist.length; i++){
             try {
                 var resp = await fetch('/' + arquivosHist[i]);
