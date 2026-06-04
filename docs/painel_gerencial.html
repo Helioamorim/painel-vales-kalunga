@@ -407,10 +407,35 @@ async function carregarDadosHistoricos(){
         console.log('📦 Dados históricos carregados: ' + dadosHistoricos.length + ' registros');
     } catch(e){ console.warn('⚠️ Sem dados históricos disponíveis'); }
 }
-
+function converterDataHistorico(item){
+    // Se DataVale for string DD/MM/YYYY, converte para número serial do Excel
+    if(typeof item['DataVale'] === 'string' && item['DataVale'].includes('/')){
+        var partes = item['DataVale'].split('/');
+        if(partes.length === 3){
+            var data = new Date(parseInt(partes[2]), parseInt(partes[1])-1, parseInt(partes[0]));
+            item['DataVale'] = Math.round((data.getTime() / 86400000) + 25569) + '';
+        }
+    }
+    // Se HoraInicio for string DD/MM/YYYY HH:MM, converte
+    if(typeof item['HoraInicio'] === 'string' && item['HoraInicio'].includes('/')){
+        var partesData = item['HoraInicio'].split(' ')[0].split('/');
+        var partesHora = item['HoraInicio'].split(' ')[1] ? item['HoraInicio'].split(' ')[1].split(':') : ['08','00'];
+        if(partesData.length === 3){
+            var dataHora = new Date(parseInt(partesData[2]), parseInt(partesData[1])-1, parseInt(partesData[0]), parseInt(partesHora[0])||8, parseInt(partesHora[1])||0);
+            item['HoraInicio'] = ((dataHora.getTime() / 86400000) + 25569).toString();
+        }
+    }
+    return item;
+}
 function obterTodosDados(){
     var todos = dadosBrutos.slice();
-    if(dadosHistoricos.length > 0){ todos = todos.concat(dadosHistoricos); }
+    if(dadosHistoricos.length > 0){
+        var historicoConvertido = [];
+        for(var i = 0; i < dadosHistoricos.length; i++){
+            historicoConvertido.push(converterDataHistorico(dadosHistoricos[i]));
+        }
+        todos = todos.concat(historicoConvertido);
+    }
     return todos;
 }
 
