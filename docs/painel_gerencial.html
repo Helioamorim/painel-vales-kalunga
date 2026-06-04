@@ -390,13 +390,19 @@ async function carregarDadosHistoricos(){
     'https://arquicoshistoricovale.pages.dev/2026_01_03.json'
 ];
         for(var i = 0; i < arquivosHist.length; i++){
-            try {
-                var resp = await fetch('/' + arquivosHist[i]);
-                if(!resp.ok) continue;
-                var data = await resp.json();
-                if(Array.isArray(data)){ dadosHistoricos = dadosHistoricos.concat(data); }
-            } catch(e){ console.warn('⚠️ Histórico não encontrado: ' + arquivosHist[i]); }
+    try {
+        var url = arquivosHist[i];
+        var resp;
+        if(url.indexOf('http') === 0){
+            resp = await fetch(url);
+        } else {
+            resp = await fetch('/' + url);
         }
+        if(!resp.ok) continue;
+        var data = await resp.json();
+        if(Array.isArray(data)){ dadosHistoricos = dadosHistoricos.concat(data); }
+    } catch(e){ console.warn('⚠️ Histórico não encontrado: ' + arquivosHist[i]); }
+}
         historicoCarregado = true;
         console.log('📦 Dados históricos carregados: ' + dadosHistoricos.length + ' registros');
     } catch(e){ console.warn('⚠️ Sem dados históricos disponíveis'); }
