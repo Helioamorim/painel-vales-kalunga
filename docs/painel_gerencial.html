@@ -452,8 +452,13 @@ function dashAplicarFiltros(){
 function dashPopularLojas(){
     var sl=document.getElementById('dash-filtro-loja');
     if(sl.options.length>1) return;
-    var reg=dashFiltroRegional||document.getElementById('dash-filtro-regional')?.value||'';
-    var lf=reg?[...new Set(dadosBrutos.filter(function(i){return i['Regional']===reg}).map(function(i){return i['Loja']}))].sort():[...new Set(dadosBrutos.map(function(i){return i['Loja']}))].sort();
+    var reg;
+    if(tipoAcesso==='regional'){
+        reg = usuarioAtual;
+    } else {
+        reg = dashFiltroRegional || document.getElementById('dash-filtro-regional')?.value || '';
+    }
+    var lf = reg ? [...new Set(dadosBrutos.filter(function(i){return i['Regional']===reg}).map(function(i){return i['Loja']}))].sort() : [...new Set(dadosBrutos.map(function(i){return i['Loja']}))].sort();
     sl.innerHTML='<option value="">Todas as Lojas</option>';
     lf.forEach(function(l){sl.innerHTML+='<option value="'+l+'">'+l+'</option>';});
 }
