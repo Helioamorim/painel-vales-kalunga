@@ -158,9 +158,21 @@
     <div class="app-item" id="menu-gerenciar-senhas" onclick="abrirModalSenhas()" style="display:none;"><span>🔑</span> Gerenciar Senhas</div>
     <button onclick="sair()" style="width:100%;padding:10px;background:#cc0000;color:white;border:none;border-radius:6px;cursor:pointer;margin-top:20px;">🚪 Sair</button>
 </div>
-        <!-- ========== TELA DASHBOARD EXECUTIVO ========== -->
+           <!-- ========== TELA DASHBOARD EXECUTIVO ========== -->
     <div id="tela-dashboard-exec" style="display:none;">
         <div class="header"><h1>📊 Dashboard Executivo</h1><p style="font-size:0.75em" id="header-info-exec"></p></div>
+        <div class="filtros-topo" id="dash-filtros" style="display:none;">
+            <span id="dash-filtro-regional-container" style="display:none;">
+                <label>👤 Regional:</label>
+                <select id="dash-filtro-regional" onchange="dashFiltroRegionalChange()"><option value="">Todas</option></select>
+            </span>
+            <span id="dash-filtro-loja-container" style="display:none;">
+                <label>🏪 Loja:</label>
+                <select id="dash-filtro-loja"><option value="">Todas</option></select>
+            </span>
+            <button onclick="carregarDashboardExecutivo()">🔍 Filtrar</button>
+            <button onclick="dashLimparFiltros()" style="background:#888;color:white;border:none;padding:6px 10px;border-radius:6px;font-size:0.7em;cursor:pointer;">✕ Limpar</button>
+        </div>
         <div class="dash-exec" id="dash-exec-content"></div>
     </div>
     <!-- ========== TELA VALES ========== -->
@@ -400,14 +412,54 @@ function obterTodosDados(){
 }
 
 // ============ DASHBOARD EXECUTIVO ============
+
+var dashFiltroRegional='',dashFiltroLoja='';
+function dashPopularFiltros(){
+    var sr=document.getElementById('dash-filtro-regional'),sl=document.getElementById('dash-filtro-loja');
+    if(tipoAcesso==='admin'){
+        document.getElementById('dash-filtros').style.display='flex';
+        document.getElementById('dash-filtro-regional-container').style.display='';
+        document.getElementById('dash-filtro-loja-container').style.display='';
+        var regs=[...new Set(dadosBrutos.map(function(i){return i['Regional']}))].sort();
+        sr.innerHTML='<option value="">Todas as Regionais</option>';
+        regs.forEach(function(r){sr.innerHTML+='<option value="'+r+'">'+r+'</option>';});
+        if(dashFiltroRegional)sr.value=dashFiltroRegional;
+        dashPopularLojas();
+    }else if(tipoAcesso==='regional'){
+        document.getElementById('dash-filtros').style.display='flex';
+        document.getElementById('dash-filtro-regional-container').style.display='none';
+        document.getElementById('dash-filtro-loja-container').style.display='';
+        var lr=[...new Set(dadosBrutos.filter(function(i){return i['Regional']===usuarioAtual}).map(function(i){return i['Loja']}))].sort();
+        sl.innerHTML='<option value="">Todas as Lojas</option>';
+        lr.forEach(function(l){sl.innerHTML+='<option value="'+l+'">'+l+'</option>';});
+        if(dashFiltroLoja)sl.value=dashFiltroLoja;
+    }else{document.getElementById('dash-filtros').style.display='none';}
+}
+function dashFiltroRegionalChange(){dashFiltroRegional=document.getElementById('dash-filtro-regional').value;dashFiltroLoja='';dashPopularLojas();}
+function dashPopularLojas(){
+    var sl=document.getElementById('dash-filtro-loja'),lf;
+    if(dashFiltroRegional){lf=[...new Set(dadosBrutos.filter(function(i){return i['Regional']===dashFiltroRegional}).map(function(i){return i['Loja']}))].sort();}
+    else{lf=[...new Set(dadosBrutos.map(function(i){return i['Loja']}))].sort();}
+    sl.innerHTML='<option value="">Todas as Lojas</option>';
+    lf.forEach(function(l){sl.innerHTML+='<option value="'+l+'">'+l+'</option>';});
+}
+function dashLimparFiltros(){dashFiltroRegional='';dashFiltroLoja='';document.getElementById('dash-filtro-regional').value='';document.getElementById('dash-filtro-loja').value='';carregarDashboardExecutivo();}
 async function carregarDashboardExecutivo(){
     await carregarDadosHistoricos();
     var todosDados = obterTodosDados();
     
     // Filtrar por acesso
+       // Filtrar por acesso + filtros do dashboard
     var d = todosDados;
-    if(tipoAcesso==='loja'){ d = d.filter(function(i){return i['Loja']===usuarioAtual||(i['Loja']&&i['Loja'].indexOf(usuarioAtual)>=0)}); }
-    else if(tipoAcesso==='regional'){ d = d.filter(function(i){return i['Regional']===usuarioAtual}); }
+    if(tipoAcesso==='loja'){
+        d = d.filter(function(i){return i['Loja']===usuarioAtual||(i['Loja']&&i['Loja'].indexOf(usuarioAtual)>=0)});
+    } else if(tipoAcesso==='regional'){
+        d = d.filter(function(i){return i['Regional']===usuarioAtual});
+        if(dashFiltroLoja){ d = d.filter(function(i){return i['Loja']===dashFiltroLoja}); }
+    } else if(tipoAcesso==='admin'){
+        if(dashFiltroRegional){ d = d.filter(function(i){return i['Regional']===dashFiltroRegional}); }
+        if(dashFiltroLoja){ d = d.filter(function(i){return i['Loja']===dashFiltroLoja}); }
+    }
     
     var lojasRegionais = [];
     if(tipoAcesso==='regional'){
@@ -545,6 +597,7 @@ async function carregarDashboardExecutivo(){
     // Alertas
     if(alertas.length>0){html+='<div class="grafico-card" style="margin-bottom:15px"><h4>⚠️ Alertas Inteligentes</h4>';alertas.forEach(function(a){html+='<div class="alerta-item">'+a+'</div>';});html+='</div>';}
     
+    dashPopularFiltros();
     document.getElementById('dash-exec-content').innerHTML=html;
 }
 // ============ VALES ============
