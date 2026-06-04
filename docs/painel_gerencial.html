@@ -414,7 +414,10 @@ function obterTodosDados(){
 // ============ DASHBOARD EXECUTIVO ============
 
 var dashFiltroRegional='',dashFiltroLoja='';
+var dashFiltrosPopulados=false;
+
 function dashPopularFiltros(){
+    if(dashFiltrosPopulados) return;
     var sr=document.getElementById('dash-filtro-regional'),sl=document.getElementById('dash-filtro-loja');
     if(tipoAcesso==='admin'){
         document.getElementById('dash-filtros').style.display='flex';
@@ -423,27 +426,42 @@ function dashPopularFiltros(){
         var regs=[...new Set(dadosBrutos.map(function(i){return i['Regional']}))].sort();
         sr.innerHTML='<option value="">Todas as Regionais</option>';
         regs.forEach(function(r){sr.innerHTML+='<option value="'+r+'">'+r+'</option>';});
-        if(dashFiltroRegional)sr.value=dashFiltroRegional;
         dashPopularLojas();
     }else if(tipoAcesso==='regional'){
         document.getElementById('dash-filtros').style.display='flex';
         document.getElementById('dash-filtro-regional-container').style.display='none';
         document.getElementById('dash-filtro-loja-container').style.display='';
-        var lr=[...new Set(dadosBrutos.filter(function(i){return i['Regional']===usuarioAtual}).map(function(i){return i['Loja']}))].sort();
-        sl.innerHTML='<option value="">Todas as Lojas</option>';
-        lr.forEach(function(l){sl.innerHTML+='<option value="'+l+'">'+l+'</option>';});
-        if(dashFiltroLoja)sl.value=dashFiltroLoja;
+        dashPopularLojas();
     }else{document.getElementById('dash-filtros').style.display='none';}
+    dashFiltrosPopulados=true;
 }
-function dashFiltroRegionalChange(){dashFiltroRegional=document.getElementById('dash-filtro-regional').value;dashFiltroLoja='';dashPopularLojas();}
-function dashPopularLojas(){
-    var sl=document.getElementById('dash-filtro-loja'),lf;
-    if(dashFiltroRegional){lf=[...new Set(dadosBrutos.filter(function(i){return i['Regional']===dashFiltroRegional}).map(function(i){return i['Loja']}))].sort();}
-    else{lf=[...new Set(dadosBrutos.map(function(i){return i['Loja']}))].sort();}
+
+function dashFiltroRegionalChange(){
+    var reg=document.getElementById('dash-filtro-regional').value;
+    dashFiltroRegional=reg;
+    dashFiltroLoja='';
+    var sl=document.getElementById('dash-filtro-loja');
+    var lf=reg?[...new Set(dadosBrutos.filter(function(i){return i['Regional']===reg}).map(function(i){return i['Loja']}))].sort():[...new Set(dadosBrutos.map(function(i){return i['Loja']}))].sort();
     sl.innerHTML='<option value="">Todas as Lojas</option>';
     lf.forEach(function(l){sl.innerHTML+='<option value="'+l+'">'+l+'</option>';});
 }
-function dashLimparFiltros(){dashFiltroRegional='';dashFiltroLoja='';document.getElementById('dash-filtro-regional').value='';document.getElementById('dash-filtro-loja').value='';carregarDashboardExecutivo();}
+
+function dashPopularLojas(){
+    var sl=document.getElementById('dash-filtro-loja');
+    if(sl.options.length>1) return;
+    var reg=dashFiltroRegional||document.getElementById('dash-filtro-regional')?.value||'';
+    var lf=reg?[...new Set(dadosBrutos.filter(function(i){return i['Regional']===reg}).map(function(i){return i['Loja']}))].sort():[...new Set(dadosBrutos.map(function(i){return i['Loja']}))].sort();
+    sl.innerHTML='<option value="">Todas as Lojas</option>';
+    lf.forEach(function(l){sl.innerHTML+='<option value="'+l+'">'+l+'</option>';});
+}
+
+function dashLimparFiltros(){
+    dashFiltroRegional='';dashFiltroLoja='';
+    document.getElementById('dash-filtro-regional')&&(document.getElementById('dash-filtro-regional').value='');
+    document.getElementById('dash-filtro-loja')&&(document.getElementById('dash-filtro-loja').value='');
+    dashFiltrosPopulados=false;
+    carregarDashboardExecutivo();
+}
 async function carregarDashboardExecutivo(){
     await carregarDadosHistoricos();
     var todosDados = obterTodosDados();
