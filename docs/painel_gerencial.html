@@ -367,55 +367,184 @@ function abrirApp(app){
     }
     toggleMenu();
 }
+// ============ DADOS HISTÓRICOS ============
+var dadosHistoricos = [];
+var historicoCarregado = false;
+
+async function carregarDadosHistoricos(){
+    if(historicoCarregado) return;
+    try {
+        var arquivosHist = [
+            'dados_historicos/2026_01_03.json',
+            'dados_historicos/2025_10_12.json',
+            'dados_historicos/2025_07_09.json',
+            'dados_historicos/2025_04_06.json'
+        ];
+        for(var i = 0; i < arquivosHist.length; i++){
+            try {
+                var resp = await fetch('/' + arquivosHist[i]);
+                if(!resp.ok) continue;
+                var data = await resp.json();
+                if(Array.isArray(data)){ dadosHistoricos = dadosHistoricos.concat(data); }
+            } catch(e){ console.warn('⚠️ Histórico não encontrado: ' + arquivosHist[i]); }
+        }
+        historicoCarregado = true;
+        console.log('📦 Dados históricos carregados: ' + dadosHistoricos.length + ' registros');
+    } catch(e){ console.warn('⚠️ Sem dados históricos disponíveis'); }
+}
+
+function obterTodosDados(){
+    var todos = dadosBrutos.slice();
+    if(dadosHistoricos.length > 0){ todos = todos.concat(dadosHistoricos); }
+    return todos;
+}
+
 // ============ DASHBOARD EXECUTIVO ============
-function carregarDashboardExecutivo(){
-    var d=dadosBrutos.slice();
-    if(tipoAcesso==='loja'){d=d.filter(function(i){return i['Loja']===usuarioAtual||(i['Loja']&&i['Loja'].indexOf(usuarioAtual)>=0)});}
-    else if(tipoAcesso==='regional'){d=d.filter(function(i){return i['Regional']===usuarioAtual});}
+async function carregarDashboardExecutivo(){
+    await carregarDadosHistoricos();
+    var todosDados = obterTodosDados();
+    
+    // Filtrar por acesso
+    var d = todosDados;
+    if(tipoAcesso==='loja'){ d = d.filter(function(i){return i['Loja']===usuarioAtual||(i['Loja']&&i['Loja'].indexOf(usuarioAtual)>=0)}); }
+    else if(tipoAcesso==='regional'){ d = d.filter(function(i){return i['Regional']===usuarioAtual}); }
+    
+    var lojasRegionais = [];
+    if(tipoAcesso==='regional'){
+        lojasRegionais = [...new Set(d.map(function(i){return i['Loja']}))].sort();
+    }
+    
     document.getElementById('header-info-exec').textContent=(tipoAcesso==='loja'?'Loja: ':(tipoAcesso==='admin'?'Visão Geral - ':'Regional: '))+(usuarioAtual||'Todas');
+    
+    // KPIs
     var totalValor=0,totalQtd=d.length;
     d.forEach(function(i){totalValor+=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;});
     var ticketMedio=totalQtd>0?totalValor/totalQtd:0;
+    
+    // Evolução mensal
     var hoje=new Date(),mesesEvol=[];
     for(var m=11;m>=0;m--){
         var ref=new Date(hoje.getFullYear(),hoje.getMonth()-m,1);
         var mesLabel=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][ref.getMonth()]+'/'+ref.getFullYear().toString().slice(2);
-        var valorMes=0;
-        d.forEach(function(i){var dv=parseInt(i['DataVale']);if(isNaN(dv))return;var dt=new Date((dv-25569)*86400*1000);if(dt.getMonth()===ref.getMonth()&&dt.getFullYear()===ref.getFullYear()){valorMes+=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;}});
-        mesesEvol.push({label:mesLabel,valor:valorMes});
+        var valorMes=0,qtdMes=0;
+        d.forEach(function(i){var dv=parseInt(i['DataVale']);if(isNaN(dv))return;var dt=new Date((dv-25569)*86400*1000);if(dt.getMonth()===ref.getMonth()&&dt.getFullYear()===ref.getFullYear()){valorMes+=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;qtdMes++;}});
+        mesesEvol.push({label:mesLabel,valor:valorMes,qtd:qtdMes});
     }
     var maxValor=Math.max.apply(null,mesesEvol.map(function(x){return x.valor}))||1;
+    
+    // Motivos
     var motivos={};d.forEach(function(i){var m=i['Motivo']||'Outros';if(!motivos[m])motivos[m]=0;motivos[m]+=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;});
     var motivosArr=Object.entries(motivos).sort(function(a,b){return b[1]-a[1]}).slice(0,6);
     var cores=['#003366','#0066cc','#e67e22','#0a0','#cc0000','#888'];
-    var rankLoja={};dadosBrutos.forEach(function(i){var l=i['Loja'];if(!rankLoja[l])rankLoja[l]=0;rankLoja[l]+=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;});
+    
+    // Ranking
+    var rankLoja={};todosDados.forEach(function(i){var l=i['Loja'];if(!rankLoja[l])rankLoja[l]=0;rankLoja[l]+=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;});
     var rankArr=Object.entries(rankLoja).sort(function(a,b){return a[1]-b[1]});
     var posLoja=0,totalLojas=rankArr.length;
-    for(var i=0;i<rankArr.length;i++){if(rankArr[i][0]===usuarioAtual||(rankArr[i][0]&&rankArr[i][0].indexOf(usuarioAtual)>=0)){posLoja=i+1;break;}}
+    if(tipoAcesso==='loja'){for(var i=0;i<rankArr.length;i++){if(rankArr[i][0]===usuarioAtual||(rankArr[i][0]&&rankArr[i][0].indexOf(usuarioAtual)>=0)){posLoja=i+1;break;}}}
     var score=posLoja>0?Math.round((1-(posLoja/totalLojas))*100):50;
     var mediaRede=totalLojas>0?rankArr.reduce(function(s,x){return s+x[1]},0)/totalLojas:0;
     var deltaMedia=mediaRede>0?((totalValor-mediaRede)/mediaRede*100):0;
+    
+    // Alertas
     var alertas=[];
     if(mesesEvol.length>=2){var atual=mesesEvol[mesesEvol.length-1].valor,anterior=mesesEvol[mesesEvol.length-2].valor;if(anterior>0&&atual>anterior*1.2){alertas.push('📈 Crescimento >20% em relação ao mês anterior');}}
-    if(totalValor>mediaRede*1.15){alertas.push('⚠️ Loja acima da média da rede em '+deltaMedia.toFixed(0)+'%');}
+    if(tipoAcesso==='loja'&&totalValor>mediaRede*1.15){alertas.push('⚠️ Loja acima da média da rede em '+deltaMedia.toFixed(0)+'%');}
+    
+    // Lojas da regional (para regional/admin)
+    var lojasRank=[];
+    if(tipoAcesso==='regional'||tipoAcesso==='admin'){
+        var lojasReg={};
+        d.forEach(function(i){var l=i['Loja'];if(!lojasReg[l])lojasReg[l]={qtd:0,valor:0};lojasReg[l].qtd++;lojasReg[l].valor+=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;});
+        lojasRank=Object.entries(lojasReg).sort(function(a,b){return b[1].valor-a[1].valor});
+    }
+    
+    // Top 5 lojas com mais vales (regional/admin)
+    var topLojasValor=lojasRank.slice(0,5);
+    
+    // Lojas com maior crescimento (regional/admin)
+    var crescimentoLojas=[];
+    if(tipoAcesso!=='loja'&&mesesEvol.length>=2){
+        var lojasCresc={};
+        d.forEach(function(i){
+            var l=i['Loja'];if(!lojasCresc[l])lojasCresc[l]={atual:0,anterior:0};
+            var dv=parseInt(i['DataVale']);if(isNaN(dv))return;
+            var dt=new Date((dv-25569)*86400*1000);
+            var refAtual=new Date(hoje.getFullYear(),hoje.getMonth(),1);
+            var refAnt=new Date(hoje.getFullYear(),hoje.getMonth()-1,1);
+            var v=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;
+            if(dt.getMonth()===refAtual.getMonth()&&dt.getFullYear()===refAtual.getFullYear()){lojasCresc[l].atual+=v;}
+            if(dt.getMonth()===refAnt.getMonth()&&dt.getFullYear()===refAnt.getFullYear()){lojasCresc[l].anterior+=v;}
+        });
+        crescimentoLojas=Object.entries(lojasCresc).filter(function(x){return x[1].anterior>0}).map(function(x){return{loja:x[0],pct:Math.round(((x[1].atual-x[1].anterior)/x[1].anterior)*100)}}).sort(function(a,b){return b.pct-a.pct}).slice(0,5);
+    }
+    
+    // MONTAR HTML
     var html='';
+    
+    // KPI Row
     html+='<div class="kpi-row">';
     html+='<div class="kpi-card"><div class="kpi-label">💰 Valor Total</div><div class="kpi-valor">'+fm(totalValor)+'</div></div>';
     html+='<div class="kpi-card"><div class="kpi-label">📋 Ocorrências</div><div class="kpi-valor">'+totalQtd+'</div></div>';
     html+='<div class="kpi-card"><div class="kpi-label">📊 Ticket Médio</div><div class="kpi-valor">'+fm(ticketMedio)+'</div></div>';
-    html+='<div class="kpi-card ranking"><div class="kpi-label">🏆 Ranking</div><div class="kpi-valor">'+(posLoja>0?posLoja+'º':'N/A')+'</div><div style="font-size:10px;color:#888">de '+totalLojas+' lojas</div></div>';
-    html+='<div class="kpi-card score"><div class="kpi-label">⭐ Score</div><div class="kpi-valor">'+score+'/100</div></div>';
+    if(tipoAcesso==='loja'){
+        html+='<div class="kpi-card ranking"><div class="kpi-label">🏆 Ranking</div><div class="kpi-valor">'+(posLoja>0?posLoja+'º':'N/A')+'</div><div style="font-size:10px;color:#888">de '+totalLojas+' lojas</div></div>';
+        html+='<div class="kpi-card score"><div class="kpi-label">⭐ Score</div><div class="kpi-valor">'+score+'/100</div></div>';
+    } else {
+        html+='<div class="kpi-card"><div class="kpi-label">🏪 Lojas</div><div class="kpi-valor">'+(lojasRank.length||totalLojas)+'</div></div>';
+        html+='<div class="kpi-card score"><div class="kpi-label">📈 Média/Rede</div><div class="kpi-valor">'+fm(mediaRede)+'</div></div>';
+    }
     html+='</div>';
+    
+    // Gráfico de evolução
     html+='<div class="grafico-row"><div class="grafico-card"><h4>📈 Evolução Mensal (12 meses)</h4><div style="display:flex;align-items:flex-end;gap:3px;height:120px;padding-top:10px">';
-    mesesEvol.forEach(function(m){var h=m.valor>0?Math.max(8,(m.valor/maxValor)*110):4;html+='<div style="flex:1;text-align:center;font-size:8px"><div style="background:#0066cc;height:'+h+'px;border-radius:3px 3px 0 0;min-width:12px" title="'+fm(m.valor)+'"></div>'+m.label+'</div>';});
-    html+='</div></div><div class="grafico-card"><h4>📊 Por Motivo</h4>';
+    mesesEvol.forEach(function(m){var h=m.valor>0?Math.max(8,(m.valor/maxValor)*110):4;html+='<div style="flex:1;text-align:center;font-size:8px"><div style="background:#0066cc;height:'+h+'px;border-radius:3px 3px 0 0;min-width:12px" title="'+fm(m.valor)+' ('+m.qtd+' ocorrências)"></div>'+m.label+'</div>';});
+    html+='</div></div>';
+    
+    // Por Motivo
+    html+='<div class="grafico-card"><h4>📊 Por Motivo</h4>';
     motivosArr.forEach(function(m,i){var pct=totalValor>0?(m[1]/totalValor*100):0;html+='<div style="font-size:10px;margin:3px 0">'+m[0]+'</div><div class="barra"><div class="barra-preenchida" style="width:'+pct+'%;background:'+cores[i%cores.length]+'"></div></div><div style="font-size:9px;color:#888;text-align:right">'+fm(m[1])+' ('+pct.toFixed(0)+'%)</div>';});
     html+='</div></div>';
-    html+='<div class="comparativo-card"><h4 style="color:#003366;margin-bottom:10px">📊 Comparação com a Média da Rede</h4><div class="comparativo-minha">Minha Loja: '+fm(totalValor)+'</div><div class="comparativo-media">Média da Rede: '+fm(mediaRede)+'</div><div class="comparativo-delta '+(deltaMedia>0?'up':'down')+'">'+(deltaMedia>0?'▲':'▼')+' '+Math.abs(deltaMedia).toFixed(0)+'% '+(deltaMedia>0?'acima':'abaixo')+' da média</div></div>';
+    
+    // Comparativo (só para loja)
+    if(tipoAcesso==='loja'){
+        html+='<div class="comparativo-card"><h4 style="color:#003366;margin-bottom:10px">📊 Comparação com a Média da Rede</h4><div class="comparativo-minha">Minha Loja: '+fm(totalValor)+'</div><div class="comparativo-media">Média da Rede: '+fm(mediaRede)+'</div><div class="comparativo-delta '+(deltaMedia>0?'up':'down')+'">'+(deltaMedia>0?'▲':'▼')+' '+Math.abs(deltaMedia).toFixed(0)+'% '+(deltaMedia>0?'acima':'abaixo')+' da média</div></div>';
+    }
+    
+    // Cards extras para Regional/Admin
+    if(tipoAcesso!=='loja'){
+        // Top 5 Lojas
+        html+='<div class="grafico-row"><div class="grafico-card"><h4>🏆 Top 5 Lojas - Valor</h4>';
+        topLojasValor.forEach(function(l,i){html+='<div class="ranking-item"><span class="pos">'+(i+1)+'</span><span class="nome">'+l[0]+'</span><span class="val">'+fm(l[1].valor)+'</span></div>';});
+        html+='</div>';
+        
+        // Crescimento
+        if(crescimentoLojas.length>0){
+            html+='<div class="grafico-card"><h4>📈 Maior Crescimento</h4>';
+            crescimentoLojas.forEach(function(l,i){
+                var cor=l.pct>0?'#cc0000':'#0a0';
+                var seta=l.pct>0?'▲':'▼';
+                html+='<div class="ranking-item"><span class="pos">'+(i+1)+'</span><span class="nome">'+l.loja+'</span><span class="val" style="color:'+cor+'">'+seta+' '+Math.abs(l.pct)+'%</span></div>';
+            });
+            html+='</div>';
+        }
+        html+='</div>';
+        
+        // Totais por loja
+        html+='<div class="grafico-card" style="margin-bottom:15px"><h4>🏪 Resumo por Loja</h4>';
+        html+='<div style="overflow-x:auto;"><table style="font-size:11px;width:100%"><thead><tr><th>Loja</th><th>QTD</th><th>Valor</th><th>Média</th></tr></thead><tbody>';
+        lojasRank.forEach(function(l){html+='<tr><td>'+l[0]+'</td><td>'+l[1].qtd+'</td><td class="valor">'+fm(l[1].valor)+'</td><td>'+fm(l[1].qtd>0?l[1].valor/l[1].qtd:0)+'</td></tr>';});
+        html+='</tbody></table></div></div>';
+    }
+    
+    // Top 5 Motivos (para todos)
     html+='<div class="grafico-card" style="margin-bottom:15px"><h4>🏆 Top 5 Motivos</h4>';
     motivosArr.slice(0,5).forEach(function(m,i){html+='<div class="ranking-item"><span class="pos">'+(i+1)+'</span><span class="nome">'+m[0]+'</span><span class="val">'+fm(m[1])+'</span></div>';});
     html+='</div>';
+    
+    // Alertas
     if(alertas.length>0){html+='<div class="grafico-card" style="margin-bottom:15px"><h4>⚠️ Alertas Inteligentes</h4>';alertas.forEach(function(a){html+='<div class="alerta-item">'+a+'</div>';});html+='</div>';}
+    
     document.getElementById('dash-exec-content').innerHTML=html;
 }
 // ============ VALES ============
