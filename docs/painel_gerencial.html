@@ -1359,6 +1359,145 @@ function baixarArquivo(conteudo,nome){
     a.href=url;a.download=nome;
     document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
 }
+// ============ ENVIAR PARA FINANCEIRO ============
+async function enviarParaFinanceiro(){
+    if(!confirm('📤 Deseja enviar TODOS os vales filtrados para o Financeiro?\n\n✅ A Data de Envio será preenchida com hoje: ' + new Date().toLocaleDateString('pt-BR') + '\n📥 O Excel será exportado automaticamente após o envio.')) return;
+    
+    var dados = dadosFiltrados.slice();
+    if(dados.length === 0){ alert('⚠️ Nenhum vale para enviar!'); return; }
+    
+    var hojeExcel = Math.round((new Date().getTime() / 86400000) + 25569);
+    var dataHoje = new Date().toISOString().split('T')[0];
+    
+    // Atualizar localmente
+    dados.forEach(function(item){
+        item['DataEnvioFin'] = hojeExcel + '';
+        // Atualizar no dadosBrutos também
+        for(var i = 0; i < dadosBrutos.length; i++){
+            if(dadosBrutos[i]['ChaveUnica'] === item['ChaveUnica']){
+                dadosBrutos[i]['DataEnvioFin'] = hojeExcel + '';
+                break;
+            }
+        }
+    });
+    
+    // Enviar para Power Automate em lotes de 50
+    var total = dados.length;
+    var processados = 0;
+    var erros = 0;
+    
+    for(var i = 0; i < dados.length; i += 50){
+        var lote = dados.slice(i, Math.min(i + 50, dados.length));
+        var promessas = lote.map(function(item){
+            return fetch(URL_APROVACAO, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    ChaveUnica: item['ChaveUnica'] || '',
+                    Status_Aprovacao: item['Status_Aprovacao'] || '',
+                    Observacao_Regional: '',
+                    Resposta_Loja: '',
+                    Aprovador: usuarioAtual,
+                    Data_Aprovacao: dataHoje,
+                    DataEnvioFin_Editada: hojeExcel + '',
+                    Cracha_Editado: '',
+                    DataVale_Editada: '',
+                    Valor_Editado: '',
+                    Motivo_Editado: '',
+                    Log_Edicoes: '[' + new Date().toLocaleString('pt-BR') + ' por ' + usuarioAtual + '] Enviado para Financeiro',
+                    Situacao: item['Situacao'] || ''
+                })
+            }).then(function(r){ return r.json(); }).catch(function(){ erros++; });
+        });
+        
+        await Promise.all(promessas);
+        processados += lote.length;
+    }
+    
+    // Recarregar tabela
+    carregarTabelas(dadosFiltrados);
+    
+    if(erros > 0){
+        alert('⚠️ ' + processados + ' vales processados. ' + erros + ' erros encontrados.\n\nO Excel será exportado mesmo assim.');
+    } else {
+        alert('✅ ' + processados + ' vales enviados para o Financeiro com sucesso!\n\n📥 O Excel será baixado agora.');
+    }
+    
+    // Exportar Excel com abas por regional
+    exportarExcelFinanceiro(dados);
+}
+
+function exportarExcelFinanceiro(dados){
+    // Agrupar por regional
+    var porRegional = {};
+    dados.forEach(function(i){
+        var reg = i['Regional'] || 'Sem Regional';
+        if(!porRegional[reg]) porRegional[reg] = [];
+        porRegional[reg].push(i);
+    });
+    
+    // Criar workbook
+    var csvCompleto = '\uFEFF'; // BOM para Excel
+    
+    Object.keys(porRegional).sort().forEach(function(regional){
+        var vales = porRegional[regional];
+        
+        // Ordenar por loja e matrícula (crachá)
+        vales.sort(function(a,b){
+            var lojaA = a['Loja'] || '', lojaB = b['Loja'] || '';
+            if(lojaA !== lojaB) return lojaA.localeCompare(lojaB);
+            var crachaA = parseInt(a['Cracha']) || 0, crachaB = parseInt(b['Cracha']) || 0;
+            return crachaA - crachaB;
+        });
+        
+        // Cabeçalho da aba
+        csvCompleto += 'REGIONAL: ' + regional + '\n';
+        csvCompleto += 'Loja;Crachá/Matrícula;Data do Vale;Motivo;Tipo Falha;Valor;Status;Data Envio Fin.\n';
+        
+        var totalRegional = 0;
+        vales.forEach(function(i){
+            var dataVale = '';
+            var dv = parseInt(i['DataVale']);
+            if(!isNaN(dv)){
+                var d = new Date((dv - 25569 + 1) * 86400 * 1000);
+                dataVale = d.toLocaleDateString('pt-BR');
+            }
+            var dataEnvio = '';
+            var df = parseInt(i['DataEnvioFin']);
+            if(!isNaN(df) && df > 0){
+                var de = new Date((df - 25569 + 1) * 86400 * 1000);
+                dataEnvio = de.toLocaleDateString('pt-BR');
+            } else {
+                dataEnvio = new Date().toLocaleDateString('pt-BR');
+            }
+            var valor = parseFloat((i['ValorVale'] || '0').toString().replace(',', '.')) || 0;
+            totalRegional += valor;
+            
+            csvCompleto += (i['Loja'] || '') + ';' +
+                          (i['Cracha'] || '') + ';' +
+                          dataVale + ';' +
+                          (i['Motivo'] || '').replace(/;/g, ',') + ';' +
+                          (i['TipoFalha'] || '') + ';' +
+                          'R$ ' + valor.toFixed(2).replace('.', ',') + ';' +
+                          (i['Status_Aprovacao'] || 'Pendente') + ';' +
+                          dataEnvio + '\n';
+        });
+        
+        // Total da regional
+        csvCompleto += 'TOTAL ' + regional + ';;;;;R$ ' + totalRegional.toFixed(2).replace('.', ',') + ';;\n\n';
+    });
+    
+    // Baixar arquivo
+    var blob = new Blob([csvCompleto], {type: 'text/csv;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'Financeiro_Vales_' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
 // ============ GERENCIAR SENHAS (ADMIN) ============
 function abrirModalSenhas(){
    if(tipoAcesso!=='admin'||(adminNivel!=='master'&&adminNivel!=='editor')){
@@ -1492,6 +1631,7 @@ atualizarContador();
 function autoLogin(){var u=localStorage.getItem('kalunga_usuario');var t=localStorage.getItem('kalunga_tipo');if(u&&t){tipoAcesso=t;usuarioAtual=u;if(tipoAcesso==='admin'&&ADMINS[u])adminNivel=ADMINS[u].nivel;document.getElementById('login-screen').style.display='none';document.getElementById('app-screen').style.display='block';document.getElementById('menu-usuario').textContent=(tipoAcesso==='loja'?'🏪 ':'👤 ')+u;document.getElementById('header-info').textContent=(tipoAcesso==='loja'?'Loja: ':'Regional: ')+u;document.getElementById('header-info-cob').textContent=(tipoAcesso==='loja'?'Loja: ':'Regional: ')+u;if(tipoAcesso==='regional'||tipoAcesso==='admin'){document.getElementById('filtro-loja-container').style.display='';popularDropdownLoja();}else{document.getElementById('filtro-loja-container').style.display='none';}if(tipoAcesso==='loja'){document.getElementById('tab-loja').style.display='none';document.getElementById('card-lojas').style.display='none';}
 if(tipoAcesso==='admin'&&(adminNivel==='master'||adminNivel==='editor')){document.getElementById('menu-gerenciar-senhas').style.display='';}else{document.getElementById('menu-gerenciar-senhas').style.display='none';}
 if(tipoAcesso==='loja'){document.getElementById('menu-uber').style.display='none';}else{document.getElementById('menu-uber').style.display='';}
+if(tipoAcesso==='admin'){document.getElementById('btn-enviar-financeiro').style.display='';}else{document.getElementById('btn-enviar-financeiro').style.display='none';}
 popularDropdownCob();if(appAtual==='dashboard-exec')carregarDashboardExecutivo();
 else if(appAtual==='vales')aplicarFiltros();
 else filtrarCobranca();}}
@@ -1517,7 +1657,8 @@ if(tipoAcesso==='admin'&&!ADMINS[v]){document.getElementById('login-erro').style
         if(tipoAcesso==='regional'||tipoAcesso==='admin'){document.getElementById('filtro-loja-container').style.display='';popularDropdownLoja();}else{document.getElementById('filtro-loja-container').style.display='none';}
         if(tipoAcesso==='loja'){document.getElementById('tab-loja').style.display='none';document.getElementById('card-lojas').style.display='none';}else{document.getElementById('tab-loja').style.display='';document.getElementById('card-lojas').style.display='';}
                             if(tipoAcesso==='admin'&&(adminNivel==='master'||adminNivel==='editor')){document.getElementById('menu-gerenciar-senhas').style.display='';}else{document.getElementById('menu-gerenciar-senhas').style.display='none';}
-        if(tipoAcesso==='loja'){document.getElementById('menu-uber').style.display='none';}else{document.getElementById('menu-uber').style.display='';}
+               if(tipoAcesso==='loja'){document.getElementById('menu-uber').style.display='none';}else{document.getElementById('menu-uber').style.display='';}
+        if(tipoAcesso==='admin'){document.getElementById('btn-enviar-financeiro').style.display='';}else{document.getElementById('btn-enviar-financeiro').style.display='none';}
         popularDropdownCob();
         localStorage.setItem('kalunga_usuario',v);localStorage.setItem('kalunga_tipo',tipoAcesso);
         if(appAtual==='vales')aplicarFiltros();else filtrarCobranca();
