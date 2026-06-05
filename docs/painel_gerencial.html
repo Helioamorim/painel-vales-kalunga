@@ -160,7 +160,7 @@
 </div>
            <!-- ========== TELA DASHBOARD EXECUTIVO ========== -->
     <div id="tela-dashboard-exec" style="display:none;">
-        <div class="header"><h1>📊 Dashboard Executivo</h1><p style="font-size:0.75em" id="header-info-exec"></p></div>
+        <div class="header"><h1>📊 Dashboard Executivo</h1><p style="font-size:0.75em" id="header-info-exec"></p><button id="btn-voltar-dash" onclick="dashLimparFiltros()" style="display:none;background:rgba(255,255,255,0.2);color:white;border:none;padding:5px 12px;border-radius:15px;cursor:pointer;margin-top:8px;font-size:0.8em;">⬅ Voltar para visão geral</button></div>
         <div class="filtros-topo" id="dash-filtros" style="display:none;">
             <span id="dash-filtro-regional-container" style="display:none;">
                 <label>👤 Regional:</label>
@@ -659,7 +659,7 @@ async function carregarDashboardExecutivo(){
         
         // Top 5 Lojas - Valor
         html+='<div class="grafico-card"><h4>🏆 Top 5 - Valor</h4>';
-        topLojasValor.forEach(function(l,i){html+='<div class="ranking-item"><span class="pos">'+(i+1)+'</span><span class="nome">'+l[0]+'</span><span class="val">'+fm(l[1].valor)+'</span></div>';});
+        topLojasQtd.forEach(function(l,i){html+='<div class="ranking-item"><span class="pos">'+(i+1)+'</span><span class="nome" style="cursor:pointer;color:#0066cc;text-decoration:underline" onclick="verDashboardLoja(\''+l[0]+'\')">'+l[0]+'</span><span class="val">'+l[1].qtd+' ocorrências</span></div>';});="cursor:pointer;color:#0066cc;text-decoration:underline" onclick="verDashboardLoja(\''+l[0]+'\')">'+l[0]+'</span><span class="val">'+fm(l[1].valor)+'</span></div>';});]+'</span><span class="val">'+fm(l[1].valor)+'</span></div>';});
         html+='</div>';
         
         // Top 5 Lojas - Quantidade
@@ -683,7 +683,7 @@ async function carregarDashboardExecutivo(){
         // Totais por loja
         html+='<div class="grafico-card" style="margin-bottom:15px"><h4>🏪 Resumo por Loja</h4>';
         html+='<div style="overflow-x:auto;"><table style="font-size:11px;width:100%"><thead><tr><th>Loja</th><th>QTD</th><th>Valor</th><th>Média</th></tr></thead><tbody>';
-        lojasRank.forEach(function(l){html+='<tr><td>'+l[0]+'</td><td>'+l[1].qtd+'</td><td class="valor">'+fm(l[1].valor)+'</td><td>'+fm(l[1].qtd>0?l[1].valor/l[1].qtd:0)+'</td></tr>';});
+        lojasRank.forEach(function(l){html+='<tr><td><span style="cursor:pointer;color:#0066cc;text-decoration:underline" onclick="verDashboardLoja(\''+l[0]+'\')">'+l[0]+'</span></td><td>'+l[1].qtd+'</td><td class="valor">'+fm(l[1].valor)+'</td><td>'+fm(l[1].qtd>0?l[1].valor/l[1].qtd:0)+'</td></tr>';});m(l[1].qtd>0?l[1].valor/l[1].qtd:0)+'</td></tr>';});
         html+='</tbody></table></div></div>';
     }
     
@@ -696,6 +696,16 @@ async function carregarDashboardExecutivo(){
     if(alertas.length>0){html+='<div class="grafico-card" style="margin-bottom:15px"><h4>⚠️ Alertas Inteligentes</h4>';alertas.forEach(function(a){html+='<div class="alerta-item">'+a+'</div>';});html+='</div>';}
     
     dashPopularFiltros();
+ // Mostrar botão voltar quando estiver vendo loja específica
+    var btnVoltar = document.getElementById('btn-voltar-dash');
+    if(btnVoltar){
+        if((tipoAcesso==='regional'||tipoAcesso==='admin') && dashFiltroLoja){
+            btnVoltar.style.display = 'inline-block';
+        } else {
+            btnVoltar.style.display = 'none';
+        }
+    }
+    
     document.getElementById('dash-exec-content').innerHTML=html;
 }
 // ============ APROVAÇÃO EM LOTE ============
@@ -822,6 +832,34 @@ function recusarLote(){
     }).catch(function(){
         alert('❌ Erro ao recusar. Tente novamente.');
     });
+}
+// ============ VER LOJA ESPECÍFICA ============
+function verDashboardLoja(loja){
+    // Salvar filtro atual
+    var regAnt = dashFiltroRegional;
+    var lojaAnt = dashFiltroLoja;
+    
+    // Aplicar filtro da loja selecionada
+    dashFiltroLoja = loja;
+    dashFiltroRegional = '';
+    
+    // Atualizar dropdowns
+    if(document.getElementById('dash-filtro-regional')){
+        document.getElementById('dash-filtro-regional').value = '';
+    }
+    if(document.getElementById('dash-filtro-loja')){
+        document.getElementById('dash-filtro-loja').value = loja;
+    }
+    
+    // Recarregar dashboard com visão da loja
+    carregarDashboardExecutivo().then(function(){
+        // Restaurar filtros para continuar navegando
+        dashFiltroRegional = regAnt;
+        dashFiltroLoja = lojaAnt;
+    });
+    
+    // Scroll para o topo
+    window.scrollTo({top: 0, behavior: 'smooth'});
 }
 // ============ VALES ============
 function abrirModalLoja(loja){var d=dadosFiltrados.filter(i=>i['Loja']===loja);d.sort((a,b)=>(parseFloat(b['HoraInicio'])||0)-(parseFloat(a['HoraInicio'])||0));var t=d.reduce((s,i)=>s+(parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0),0);var h='<h3>📋 '+loja+' - '+d.length+' vales</h3><br><table><thead><tr><th>Data/Hora Solic.</th><th>Data do Vale</th><th>Crachá</th><th>Motivo</th><th>Tipo Falha</th><th>Valor</th><th>Data Envio Fin.</th><th>Status</th></tr></thead><tbody>';d.forEach(i=>{var s=getStatus(i['DataVale'],i['HoraInicio']);h+='<tr><td>'+edh(i['HoraInicio'])+'</td><td>'+ed(i['DataVale'])+'</td><td>'+(i['Cracha']||'')+'</td><td>'+(i['Motivo']||'')+'</td><td>'+(i['TipoFalha']||'')+'</td><td class="valor">'+fm(parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0)+'</td><td>'+(i['DataEnvioFin']&&i['DataEnvioFin']!==''?ed(i['DataEnvioFin']):'-')+'</td><td class="'+s.classe+'">'+s.texto+'</td></tr>';});h+='<tr style="font-weight:bold;background:#e6f0ff;"><td colspan="7">TOTAL</td><td class="valor">'+fm(t)+'</td></tr></tbody></table>';document.getElementById('modal-titulo').textContent='🏪 '+loja;document.getElementById('modal-body').innerHTML=h;document.getElementById('modal-overlay').classList.add('ativo');}
