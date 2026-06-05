@@ -657,14 +657,14 @@ async function carregarDashboardExecutivo(){
         
         html+='<div class="grafico-row" style="grid-template-columns:1fr 1fr 1fr">';
         
-        // Top 5 Lojas - Valor
+               // Top 5 Lojas - Valor
         html+='<div class="grafico-card"><h4>🏆 Top 5 - Valor</h4>';
-        topLojasQtd.forEach(function(l,i){html+='<div class="ranking-item"><span class="pos">'+(i+1)+'</span><span class="nome" style="cursor:pointer;color:#0066cc;text-decoration:underline" onclick="verDashboardLoja(\''+l[0]+'\')">'+l[0]+'</span><span class="val">'+l[1].qtd+' ocorrências</span></div>';});="cursor:pointer;color:#0066cc;text-decoration:underline" onclick="verDashboardLoja(\''+l[0]+'\')">'+l[0]+'</span><span class="val">'+fm(l[1].valor)+'</span></div>';});]+'</span><span class="val">'+fm(l[1].valor)+'</span></div>';});
+        topLojasValor.forEach(function(l,i){html+='<div class="ranking-item"><span class="pos">'+(i+1)+'</span><span class="nome" style="cursor:pointer;color:#0066cc;text-decoration:underline" onclick="verDashboardLoja(\''+l[0]+'\')">'+l[0]+'</span><span class="val">'+fm(l[1].valor)+'</span></div>';});
         html+='</div>';
         
         // Top 5 Lojas - Quantidade
         html+='<div class="grafico-card"><h4>📋 Top 5 - Quantidade</h4>';
-        topLojasQtd.forEach(function(l,i){html+='<div class="ranking-item"><span class="pos">'+(i+1)+'</span><span class="nome">'+l[0]+'</span><span class="val">'+l[1].qtd+' ocorrências</span></div>';});
+        topLojasQtd.forEach(function(l,i){html+='<div class="ranking-item"><span class="pos">'+(i+1)+'</span><span class="nome" style="cursor:pointer;color:#0066cc;text-decoration:underline" onclick="verDashboardLoja(\''+l[0]+'\')">'+l[0]+'</span><span class="val">'+l[1].qtd+' ocorrências</span></div>';});
         html+='</div>';
         
         // Crescimento
@@ -683,7 +683,7 @@ async function carregarDashboardExecutivo(){
         // Totais por loja
         html+='<div class="grafico-card" style="margin-bottom:15px"><h4>🏪 Resumo por Loja</h4>';
         html+='<div style="overflow-x:auto;"><table style="font-size:11px;width:100%"><thead><tr><th>Loja</th><th>QTD</th><th>Valor</th><th>Média</th></tr></thead><tbody>';
-        lojasRank.forEach(function(l){html+='<tr><td><span style="cursor:pointer;color:#0066cc;text-decoration:underline" onclick="verDashboardLoja(\''+l[0]+'\')">'+l[0]+'</span></td><td>'+l[1].qtd+'</td><td class="valor">'+fm(l[1].valor)+'</td><td>'+fm(l[1].qtd>0?l[1].valor/l[1].qtd:0)+'</td></tr>';});m(l[1].qtd>0?l[1].valor/l[1].qtd:0)+'</td></tr>';});
+                lojasRank.forEach(function(l){html+='<tr><td><span style="cursor:pointer;color:#0066cc;text-decoration:underline" onclick="verDashboardLoja(\''+l[0]+'\')">'+l[0]+'</span></td><td>'+l[1].qtd+'</td><td class="valor">'+fm(l[1].valor)+'</td><td>'+fm(l[1].qtd>0?l[1].valor/l[1].qtd:0)+'</td></tr>';});m(l[1].qtd>0?l[1].valor/l[1].qtd:0)+'</td></tr>';});
         html+='</tbody></table></div></div>';
     }
     
