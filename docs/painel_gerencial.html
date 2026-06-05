@@ -555,6 +555,7 @@ async function carregarDashboardExecutivo(){
     var posLoja=0,totalLojas=rankArr.length;
     if(tipoAcesso==='loja'){for(var i=0;i<rankArr.length;i++){if(rankArr[i][0]===usuarioAtual||(rankArr[i][0]&&rankArr[i][0].indexOf(usuarioAtual)>=0)){posLoja=i+1;break;}}}
     var score=posLoja>0?Math.round((1-(posLoja/totalLojas))*100):50;
+    var mediaQtdRede = totalLojas > 0 ? Math.round(rankArr.reduce(function(s,x){return s + x[1]}, 0) / totalLojas) : 0;
     var mediaRede=totalLojas>0?rankArr.reduce(function(s,x){return s+x[1]},0)/totalLojas:0;
     var deltaMedia=mediaRede>0?((totalValor-mediaRede)/mediaRede*100):0;
     
@@ -599,9 +600,10 @@ async function carregarDashboardExecutivo(){
     html+='<div class="kpi-card"><div class="kpi-label">💰 Valor Total</div><div class="kpi-valor">'+fm(totalValor)+'</div></div>';
     html+='<div class="kpi-card"><div class="kpi-label">📋 Ocorrências</div><div class="kpi-valor">'+totalQtd+'</div></div>';
     html+='<div class="kpi-card"><div class="kpi-label">📊 Ticket Médio</div><div class="kpi-valor">'+fm(ticketMedio)+'</div></div>';
-    if(tipoAcesso==='loja'){
+       if(tipoAcesso==='loja'){
         html+='<div class="kpi-card ranking"><div class="kpi-label">🏆 Ranking</div><div class="kpi-valor">'+(posLoja>0?posLoja+'º':'N/A')+'</div><div style="font-size:10px;color:#888">de '+totalLojas+' lojas</div></div>';
         html+='<div class="kpi-card score"><div class="kpi-label">⭐ Score</div><div class="kpi-valor">'+score+'/100</div></div>';
+        html+='<div class="kpi-card"><div class="kpi-label">📊 Média Qtd Rede</div><div class="kpi-valor">'+mediaQtdRede+'</div><div style="font-size:10px;color:#888">vales/loja</div></div>';
     } else {
         html+='<div class="kpi-card"><div class="kpi-label">🏪 Lojas</div><div class="kpi-valor">'+(lojasRank.length||totalLojas)+'</div></div>';
         html+='<div class="kpi-card score"><div class="kpi-label">📈 Média/Rede</div><div class="kpi-valor">'+fm(mediaRede)+'</div></div>';
