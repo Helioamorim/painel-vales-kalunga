@@ -549,16 +549,30 @@ async function carregarDashboardExecutivo(){
     var motivosArr=Object.entries(motivos).sort(function(a,b){return b[1]-a[1]}).slice(0,6);
     var cores=['#003366','#0066cc','#e67e22','#0a0','#cc0000','#888'];
     
-    // Ranking
-    var rankLoja={};todosDados.forEach(function(i){var l=i['Loja'];if(!rankLoja[l])rankLoja[l]=0;rankLoja[l]+=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;});
-    var rankArr=Object.entries(rankLoja).sort(function(a,b){return a[1]-b[1]});
-    var posLoja=0,totalLojas=rankArr.length;
-    if(tipoAcesso==='loja'){for(var i=0;i<rankArr.length;i++){if(rankArr[i][0]===usuarioAtual||(rankArr[i][0]&&rankArr[i][0].indexOf(usuarioAtual)>=0)){posLoja=i+1;break;}}}
-    var score=posLoja>0?Math.round((1-(posLoja/totalLojas))*100):50;
-    var mediaQtdRede = totalLojas > 0 ? Math.round(rankArr.reduce(function(s,x){return s + x[1]}, 0) / totalLojas) : 0;
-    var mediaRede=totalLojas>0?rankArr.reduce(function(s,x){return s+x[1]},0)/totalLojas:0;
-    var deltaMedia=mediaRede>0?((totalValor-mediaRede)/mediaRede*100):0;
+        // Ranking por VALOR
+    var rankLojaValor={};todosDados.forEach(function(i){var l=i['Loja'];if(!rankLojaValor[l])rankLojaValor[l]=0;rankLojaValor[l]+=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;});
+    var rankArrValor=Object.entries(rankLojaValor).sort(function(a,b){return a[1]-b[1]});
     
+    // Ranking por QUANTIDADE
+    var rankLojaQtd={};todosDados.forEach(function(i){var l=i['Loja'];if(!rankLojaQtd[l])rankLojaQtd[l]=0;rankLojaQtd[l]++;});
+    var rankArrQtd=Object.entries(rankLojaQtd).sort(function(a,b){return a[1]-b[1]});
+    
+    var totalLojas=rankArrValor.length;
+    
+    // Posição da loja por QUANTIDADE
+    var posLoja=0;
+    if(tipoAcesso==='loja'){for(var i=0;i<rankArrQtd.length;i++){if(rankArrQtd[i][0]===usuarioAtual||(rankArrQtd[i][0]&&rankArrQtd[i][0].indexOf(usuarioAtual)>=0)){posLoja=i+1;break;}}}
+    
+    // Score baseado em QUANTIDADE
+    var score=posLoja>0?Math.round((1-(posLoja/totalLojas))*100):50;
+    
+    // Média de quantidade da rede
+    var somaQtdRede=0;for(var k=0;k<rankArrQtd.length;k++){somaQtdRede+=rankArrQtd[k][1];}
+    var mediaQtdRede=totalLojas>0?Math.round(somaQtdRede/totalLojas):0;
+    
+    // Média de valor da rede
+    var mediaRede=totalLojas>0?rankArrValor.reduce(function(s,x){return s+x[1]},0)/totalLojas:0;
+    var deltaMedia=mediaRede>0?((totalValor-mediaRede)/mediaRede*100):0;
     // Alertas
     var alertas=[];
     if(mesesEvol.length>=2){var atual=mesesEvol[mesesEvol.length-1].valor,anterior=mesesEvol[mesesEvol.length-2].valor;if(anterior>0&&atual>anterior*1.2){alertas.push('📈 Crescimento >20% em relação ao mês anterior');}}
