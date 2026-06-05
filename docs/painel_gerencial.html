@@ -685,7 +685,7 @@ async function carregarDashboardExecutivo(){
         html+='<div style="overflow-x:auto;"><table style="font-size:11px;width:100%"><thead><tr><th>Loja</th><th>QTD</th><th>Valor</th><th>Média</th></tr></thead><tbody>';
         lojasRank.forEach(function(l){html+='<tr><td><span style="cursor:pointer;color:#0066cc;text-decoration:underline" onclick="verDashboardLoja(\''+l[0]+'\')">'+l[0]+'</span></td><td>'+l[1].qtd+'</td><td class="valor">'+fm(l[1].valor)+'</td><td>'+fm(l[1].qtd>0?l[1].valor/l[1].qtd:0)+'</td></tr>';});
         html+='</tbody></table></div></div>';
-    
+    }
     // Top 5 Motivos (para todos)
     html+='<div class="grafico-card" style="margin-bottom:15px"><h4>🏆 Top 5 Motivos</h4>';
     motivosArr.slice(0,5).forEach(function(m,i){html+='<div class="ranking-item"><span class="pos">'+(i+1)+'</span><span class="nome">'+m[0]+'</span><span class="val">'+fm(m[1])+'</span></div>';});
@@ -1765,7 +1765,7 @@ autoLogin();
             <label>Observação:</label><input type="text" id="edit-obs" placeholder="Descreva a alteração..." style="width:100%;padding:8px;margin:5px 0;border:1px solid #ddd;border-radius:6px;">
             <button onclick="salvarEdicao()" style="width:100%;padding:12px;background:#3498db;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;margin-top:10px;">💾 Salvar Alterações</button>
             <p id="edit-msg" style="text-align:center;margin-top:8px;font-weight:600;"></p>
-        </div>
+           </div>
     </div>
 </div>
 
@@ -1788,6 +1788,5 @@ autoLogin();
     </div>
 </div>
 
-</script>
 </body>
 </html>
