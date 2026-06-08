@@ -1507,67 +1507,68 @@ function exportarExcelFinanceiro(dados){
         porRegional[reg].push(i);
     });
     
-    // Criar workbook
-    var csvCompleto = '\uFEFF'; // BOM para Excel
+    var regs = Object.keys(porRegional).sort();
     
-    Object.keys(porRegional).sort().forEach(function(regional){
-        var vales = porRegional[regional];
-        
-        // Ordenar por loja e matrícula (crachá)
-        vales.sort(function(a,b){
-            var lojaA = a['Loja'] || '', lojaB = b['Loja'] || '';
-            if(lojaA !== lojaB) return lojaA.localeCompare(lojaB);
-            var crachaA = parseInt(a['Cracha']) || 0, crachaB = parseInt(b['Cracha']) || 0;
-            return crachaA - crachaB;
-        });
-        
-        // Cabeçalho da aba
-        csvCompleto += 'REGIONAL: ' + regional + '\n';
-        csvCompleto += 'Loja;Crachá/Matrícula;Data do Vale;Motivo;Tipo Falha;Valor;Status;Data Envio Fin.\n';
-        
-        var totalRegional = 0;
-        vales.forEach(function(i){
-            var dataVale = '';
-            var dv = parseInt(i['DataVale']);
-            if(!isNaN(dv)){
-                var d = new Date((dv - 25569 + 1) * 86400 * 1000);
-                dataVale = d.toLocaleDateString('pt-BR');
-            }
-            var dataEnvio = '';
-            var df = parseInt(i['DataEnvioFin']);
-            if(!isNaN(df) && df > 0){
-                var de = new Date((df - 25569 + 1) * 86400 * 1000);
-                dataEnvio = de.toLocaleDateString('pt-BR');
-            } else {
-                dataEnvio = new Date().toLocaleDateString('pt-BR');
-            }
-            var valor = parseFloat((i['ValorVale'] || '0').toString().replace(',', '.')) || 0;
-            totalRegional += valor;
+    // Baixar um arquivo por regional
+    regs.forEach(function(regional, index){
+        setTimeout(function(){
+            var vales = porRegional[regional];
             
-            csvCompleto += (i['Loja'] || '') + ';' +
-                          (i['Cracha'] || '') + ';' +
-                          dataVale + ';' +
-                          (i['Motivo'] || '').replace(/;/g, ',') + ';' +
-                          (i['TipoFalha'] || '') + ';' +
-                          'R$ ' + valor.toFixed(2).replace('.', ',') + ';' +
-                          (i['Status_Aprovacao'] || 'Pendente') + ';' +
-                          dataEnvio + '\n';
-        });
-        
-        // Total da regional
-        csvCompleto += 'TOTAL ' + regional + ';;;;;R$ ' + totalRegional.toFixed(2).replace('.', ',') + ';;\n\n';
+            // Ordenar por loja e matrícula
+            vales.sort(function(a,b){
+                var lojaA = a['Loja'] || '', lojaB = b['Loja'] || '';
+                if(lojaA !== lojaB) return lojaA.localeCompare(lojaB);
+                var crachaA = parseInt(a['Cracha']) || 0, crachaB = parseInt(b['Cracha']) || 0;
+                return crachaA - crachaB;
+            });
+            
+            var csv = '\uFEFF';
+            csv += 'REGIONAL: ' + regional + '\n';
+            csv += 'Loja;Crachá/Matrícula;Data do Vale;Motivo;Tipo Falha;Valor;Status;Data Envio Fin.\n';
+            
+            var totalRegional = 0;
+            vales.forEach(function(i){
+                var dataVale = '';
+                var dv = parseInt(i['DataVale']);
+                if(!isNaN(dv)){
+                    var d = new Date((dv - 25569 + 1) * 86400 * 1000);
+                    dataVale = d.toLocaleDateString('pt-BR');
+                }
+                var dataEnvio = '';
+                var df = parseInt(i['DataEnvioFin']);
+                if(!isNaN(df) && df > 0){
+                    var de = new Date((df - 25569 + 1) * 86400 * 1000);
+                    dataEnvio = de.toLocaleDateString('pt-BR');
+                } else {
+                    dataEnvio = new Date().toLocaleDateString('pt-BR');
+                }
+                var valor = parseFloat((i['ValorVale'] || '0').toString().replace(',', '.')) || 0;
+                totalRegional += valor;
+                
+                csv += (i['Loja'] || '') + ';' +
+                              (i['Cracha'] || '') + ';' +
+                              dataVale + ';' +
+                              (i['Motivo'] || '').replace(/;/g, ',') + ';' +
+                              (i['TipoFalha'] || '') + ';' +
+                              'R$ ' + valor.toFixed(2).replace('.', ',') + ';' +
+                              (i['Status_Aprovacao'] || 'Pendente') + ';' +
+                              dataEnvio + '\n';
+            });
+            
+            csv += 'TOTAL ' + regional + ';;;;;R$ ' + totalRegional.toFixed(2).replace('.', ',') + ';;\n';
+            
+            var nomeRegional = regional.replace(/[\\\/\*\?\[\]:]/g, '-').substring(0, 30);
+            var blob = new Blob([csv], {type: 'text/csv;charset=utf-8'});
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'Financeiro_' + nomeRegional + '_' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, index * 500); // Baixa um a cada 500ms
     });
-    
-    // Baixar arquivo
-    var blob = new Blob([csvCompleto], {type: 'text/csv;charset=utf-8'});
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'Financeiro_Vales_' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
 }
 // ============ GERENCIAR SENHAS (ADMIN) ============
 function abrirModalSenhas(){
