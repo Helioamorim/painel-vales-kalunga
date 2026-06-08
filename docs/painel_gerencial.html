@@ -1058,16 +1058,19 @@ function aplicarFiltros(){
     
     // Filtrar por status
     if(sf!=='todos'){
-        if(sf==='Aguardando'){
-            // Filtra por Situacao OU Status_Aprovacao = Aguardando
+        if(sf==='Abonado'||sf==='Não Localizado'||sf==='Aguardando'){
+            // Estes status ficam no campo "Situacao" - verificar AMBOS os campos
             d=d.filter(function(i){
-                return (i['Situacao']||'')==='Aguardando' || (i['Status_Aprovacao']||'')==='Aguardando';
+                var sit = i['Situacao'] || '';
+                var sta = i['Status_Aprovacao'] || '';
+                return sit===sf || sta===sf;
             });
         } else if(sf==='Excluido'){
             d=d.filter(function(i){
                 return (i['Status_Aprovacao']||'')==='Excluido';
             });
         } else {
+            // Pendente, Aprovado, Recusado, Esclarecimento, Editado - ficam no Status_Aprovacao
             d=d.filter(function(i){
                 return (i['Status_Aprovacao']||'Pendente')===sf;
             });
