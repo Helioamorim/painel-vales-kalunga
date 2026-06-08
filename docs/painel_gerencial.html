@@ -1056,20 +1056,34 @@ function aplicarFiltros(){
         d=d.filter(function(i){return i['Loja']===lf});
     }
     
-    // Filtrar por status
+       // Filtrar por status
     if(sf!=='todos'){
-        if(sf==='Abonado'||sf==='Não Localizado'||sf==='Aguardando'){
+        if(sf==='Abonado'||sf==='Não Localizado'){
             // Estes status ficam no campo "Situacao" - verificar AMBOS os campos
             d=d.filter(function(i){
                 var sit = i['Situacao'] || '';
                 var sta = i['Status_Aprovacao'] || '';
                 return sit===sf || sta===sf;
             });
+        } else if(sf==='Aguardando'){
+            d=d.filter(function(i){
+                var sit = i['Situacao'] || '';
+                var sta = i['Status_Aprovacao'] || '';
+                return sit==='Aguardando' || sta==='Aguardando' || (sta==='Pendente' && sit==='');
+            });
         } else if(sf==='Excluido'){
             d=d.filter(function(i){
                 return (i['Status_Aprovacao']||'')==='Excluido';
             });
         } else {
+            d=d.filter(function(i){
+                return (i['Status_Aprovacao']||'Pendente')===sf;
+            });
+        }
+    } else {
+        d=d.filter(function(i){return (i['Status_Aprovacao']||'')!=='Excluido'});
+    }
+ else {
             // Pendente, Aprovado, Recusado, Esclarecimento, Editado - ficam no Status_Aprovacao
             d=d.filter(function(i){
                 return (i['Status_Aprovacao']||'Pendente')===sf;
