@@ -1056,10 +1056,9 @@ function aplicarFiltros(){
         d=d.filter(function(i){return i['Loja']===lf});
     }
     
-       // Filtrar por status
+           // Filtrar por status
     if(sf!=='todos'){
         if(sf==='Abonado'||sf==='Não Localizado'){
-            // Estes status ficam no campo "Situacao" - verificar AMBOS os campos
             d=d.filter(function(i){
                 var sit = i['Situacao'] || '';
                 var sta = i['Status_Aprovacao'] || '';
@@ -1083,16 +1082,6 @@ function aplicarFiltros(){
     } else {
         d=d.filter(function(i){return (i['Status_Aprovacao']||'')!=='Excluido'});
     }
- else {
-            // Pendente, Aprovado, Recusado, Esclarecimento, Editado - ficam no Status_Aprovacao
-            d=d.filter(function(i){
-                return (i['Status_Aprovacao']||'Pendente')===sf;
-            });
-        }
-    } else {
-        // "Todos" - remove apenas Excluídos
-        d=d.filter(function(i){return (i['Status_Aprovacao']||'')!=='Excluido'});
-    }
     
     if(filtrandoAlertas){
         d=d.filter(function(i){
@@ -1104,7 +1093,6 @@ function aplicarFiltros(){
     dadosFiltrados=d;
     carregarTabelas(d);
 }
-
 function carregarDashboard(d){var html='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:8px;">';var tg=0,qg=0;regionais.forEach(function(regional){var lr={},tr=0,qr=0;d.filter(function(i){return i['Regional']===regional;}).forEach(function(i){var l=i['Loja']||'Sem loja';var v=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;if(!lr[l])lr[l]={qtd:0,total:0};lr[l].qtd++;lr[l].total+=v;tr+=v;qr++;});tg+=tr;qg+=qr;html+='<div class="dash-card"><div class="dash-card-header"><strong>👤 '+regional+'</strong><br><span>'+qr+' vales | '+fm(tr)+'</span></div><table style="font-size:10px;width:100%;"><thead><tr><th>Loja</th><th>QTD</th><th>Valor</th></tr></thead><tbody>';Object.keys(lr).sort().forEach(function(l){html+='<tr><td style="font-size:9px;">'+l+'</td><td>'+lr[l].qtd+'</td><td class="valor" style="font-size:9px;">'+fm(lr[l].total)+'</td></tr>';});html+='<tr style="font-weight:bold;background:#e6f0ff;"><td>TOTAL</td><td>'+qr+'</td><td class="valor">'+fm(tr)+'</td></tr></tbody></table></div>';});html+='</div><div style="text-align:center;padding:12px;background:#003366;color:white;border-radius:10px;margin:10px;font-size:1.1em;"><strong>💰 TOTAL GERAL: '+qg+' vales | '+fm(tg)+'</strong></div>';document.getElementById('tabela-dashboard').innerHTML=html;}
 
 function carregarTabelas(d){
