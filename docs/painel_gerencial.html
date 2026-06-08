@@ -629,12 +629,33 @@ async function carregarDashboardExecutivo(){
         html+='<div class="kpi-card ranking"><div class="kpi-label">🏆 Ranking</div><div class="kpi-valor">'+(posLoja>0?posLoja+'º':'N/A')+'</div><div style="font-size:10px;color:#888">de '+totalLojas+' lojas</div></div>';
         html+='<div class="kpi-card score"><div class="kpi-label">⭐ Score</div><div class="kpi-valor">'+score+'/100</div></div>';
         html+='<div class="kpi-card"><div class="kpi-label">📊 Média Qtd Rede</div><div class="kpi-valor">'+mediaQtdRede+'</div><div style="font-size:10px;color:#888">vales/loja</div></div>';
-    } else {
+       } else {
+        // Ranking da loja selecionada por quantidade
+        var posLojaQtd = 0;
+        if(dashFiltroLoja){
+            for(var i=0;i<rankArrQtd.length;i++){
+                if(rankArrQtd[i][0]===dashFiltroLoja||(rankArrQtd[i][0]&&rankArrQtd[i][0].indexOf(dashFiltroLoja)>=0)){
+                    posLojaQtd=i+1;break;
+                }
+            }
+        }
+        var scoreQtd = posLojaQtd>0?Math.round((1-(posLojaQtd/totalLojas))*100):50;
+        
         html+='<div class="kpi-card"><div class="kpi-label">🏪 Lojas</div><div class="kpi-valor">'+(lojasRank.length||totalLojas)+'</div></div>';
-        html+='<div class="kpi-card score"><div class="kpi-label">📈 Média/Rede</div><div class="kpi-valor">'+fm(mediaRede)+'</div></div>';
+        html+='<div class="kpi-card ranking"><div class="kpi-label">🏆 Ranking Qtd</div><div class="kpi-valor">'+(posLojaQtd>0?posLojaQtd+'º':'N/A')+'</div><div style="font-size:10px;color:#888">de '+totalLojas+' lojas</div></div>';
+        html+='<div class="kpi-card score"><div class="kpi-label">⭐ Score Qtd</div><div class="kpi-valor">'+scoreQtd+'/100</div></div>';
+        html+='<div class="kpi-card"><div class="kpi-label">📊 Média Qtd</div><div class="kpi-valor">'+mediaQtdRede+'</div><div style="font-size:10px;color:#888">vales/loja</div></div>';
     }
     html+='</div>';
-    
+
+     // 🔴 NOVO: Comparativo por quantidade para loja selecionada (Admin/Regional)
+    if(tipoAcesso!=='loja' && dashFiltroLoja){
+        var deltaQtdLoja = mediaQtdRede > 0 ? ((totalQtd - mediaQtdRede) / mediaQtdRede * 100) : 0;
+        html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px">';
+        html+='<div class="comparativo-card"><h4 style="color:#003366;margin-bottom:10px">💰 Comparativo Valor</h4><div class="comparativo-minha">'+dashFiltroLoja+': '+fm(totalValor)+'</div><div class="comparativo-media">Média da Rede: '+fm(mediaRede)+'</div><div class="comparativo-delta '+(deltaMedia>0?'up':'down')+'">'+(deltaMedia>0?'▲':'▼')+' '+Math.abs(deltaMedia).toFixed(0)+'%</div></div>';
+        html+='<div class="comparativo-card"><h4 style="color:#003366;margin-bottom:10px">📋 Comparativo Quantidade</h4><div class="comparativo-minha">'+dashFiltroLoja+': '+totalQtd+' vales</div><div class="comparativo-media">Média da Rede: '+mediaQtdRede+' vales/loja</div><div class="comparativo-delta '+(deltaQtdLoja>0?'up':'down')+'">'+(deltaQtdLoja>0?'▲':'▼')+' '+Math.abs(deltaQtdLoja).toFixed(0)+'%</div></div>';
+        html+='</div>';
+    }
     // Gráfico de evolução
     html+='<div class="grafico-row"><div class="grafico-card"><h4>📈 Evolução Mensal (12 meses)</h4><div style="display:flex;align-items:flex-end;gap:3px;height:120px;padding-top:10px">';
     mesesEvol.forEach(function(m){var h=m.valor>0?Math.max(8,(m.valor/maxValor)*110):4;html+='<div style="flex:1;text-align:center;font-size:8px"><div style="background:#0066cc;height:'+h+'px;border-radius:3px 3px 0 0;min-width:12px" title="'+fm(m.valor)+' ('+m.qtd+' ocorrências)"></div>'+m.label+'</div>';});
