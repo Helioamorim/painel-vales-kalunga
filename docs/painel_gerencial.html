@@ -1056,27 +1056,37 @@ function aplicarFiltros(){
         d=d.filter(function(i){return i['Loja']===lf});
     }
     
-           // Filtrar por status
+               // Filtrar por status
     if(sf!=='todos'){
-        if(sf==='Abonado'||sf==='Não Localizado'){
+        if(sf==='Abonado'){
             d=d.filter(function(i){
-                var sit = i['Situacao'] || '';
-                var sta = i['Status_Aprovacao'] || '';
-                return sit===sf || sta===sf;
+                return (i['Situacao']||'')==='Abonado';
+            });
+        } else if(sf==='Não Localizado'){
+            d=d.filter(function(i){
+                return (i['Situacao']||'')==='Não Localizado';
             });
         } else if(sf==='Aguardando'){
+            // Aguardando = sem status E sem situação (aguardando envio ao financeiro)
             d=d.filter(function(i){
                 var sit = i['Situacao'] || '';
                 var sta = i['Status_Aprovacao'] || '';
-                return sit==='Aguardando' || sta==='Aguardando' || (sta==='Pendente' && sit==='');
+                return sta==='' && sit==='';
+            });
+        } else if(sf==='Pendente'){
+            // Pendente = sem status de aprovação (aguardando aprovação do regional)
+            d=d.filter(function(i){
+                var sta = i['Status_Aprovacao'] || '';
+                return sta==='';
             });
         } else if(sf==='Excluido'){
             d=d.filter(function(i){
                 return (i['Status_Aprovacao']||'')==='Excluido';
             });
         } else {
+            // Aprovado, Recusado, Esclarecimento, Editado
             d=d.filter(function(i){
-                return (i['Status_Aprovacao']||'Pendente')===sf;
+                return (i['Status_Aprovacao']||'')===sf;
             });
         }
     } else {
