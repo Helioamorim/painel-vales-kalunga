@@ -1177,6 +1177,7 @@ function aplicarFiltros(){
     }
     
     // Aplicar filtro de período
+      // Aplicar filtro de período
     if(p && (p.inicio || p.fim)){
         var textoPeriodo = '';
         if(p.inicio && p.fim){
@@ -1188,11 +1189,16 @@ function aplicarFiltros(){
         }
         document.getElementById('periodo-info').textContent = textoPeriodo;
         
-               d=d.filter(function(i){
+        d=d.filter(function(i){
             var de=parseInt(i['DataVale']);
             if(isNaN(de))return false;
-            var dt=new Date((de-25569+1)*86400*1000);
-            // Zerar horas para comparar só a data
+            
+            // CORREÇÃO: usar a função ed() que já tem o +1
+            var dataStr = ed(i['DataVale']);
+            if(!dataStr) return false;
+            
+            var partes = dataStr.split('/');
+            var dt = new Date(parseInt(partes[2]), parseInt(partes[1])-1, parseInt(partes[0]));
             dt.setHours(0,0,0,0);
             
             if(p.inicio && p.fim){
