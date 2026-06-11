@@ -1100,19 +1100,27 @@ function fecharModal(){document.getElementById('modal-overlay').classList.remove
 document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===this)fecharModal();});
 
 function aplicarFiltros(){
-       var mr=document.getElementById('mes-ref').value;
+          var mr=document.getElementById('mes-ref').value;
     var lf=document.getElementById('filtro-loja')?.value||'todos';
     var rf=document.getElementById('filtro-regional')?.value||'todos';
     
     if(tipoAcesso==='regional'||tipoAcesso==='admin'){
         if(tipoAcesso==='admin'){
             popularDropdownRegional();
+            // Restaurar valor da regional
+            if(rf && rf !== 'todos'){
+                document.getElementById('filtro-regional').value = rf;
+            }
             popularDropdownLoja();
         } else {
             popularDropdownLoja();
         }
-        if(lf!=='todos')document.getElementById('filtro-loja').value=lf;
+        // Restaurar valor da loja
+        if(lf!=='todos'){
+            document.getElementById('filtro-loja').value=lf;
+        }
     }
+    // Re-ler os valores após popular dropdowns
     lf=document.getElementById('filtro-loja')?.value||'todos';
     rf=document.getElementById('filtro-regional')?.value||'todos';
     var sf=document.getElementById('filtro-status')?.value||'todos';
@@ -1252,6 +1260,7 @@ function carregarTabelas(d){
 }
 function popularDropdownLoja(){
     var s=document.getElementById('filtro-loja');
+    var valorAtual = s.value; // SALVAR o valor atual
     s.innerHTML='<option value="todos">Todas</option>';
     var ld;
     if(tipoAcesso==='admin'){
@@ -1271,6 +1280,11 @@ function popularDropdownLoja(){
         o.textContent=l;
         s.appendChild(o);
     });
+    
+    // RESTAURAR o valor anterior se ainda existir na lista
+    if(valorAtual && ld.indexOf(valorAtual) >= 0){
+        s.value = valorAtual;
+    }
 }
 
 function popularDropdownRegional(){
@@ -1288,7 +1302,28 @@ function popularDropdownRegional(){
 
 function filtrarLojasPorRegional(){
     // Quando mudar a regional, atualiza a lista de lojas
+    var rf = document.getElementById('filtro-regional').value;
+    
+    // Salvar o valor atual da loja
+    var lojaAtual = document.getElementById('filtro-loja').value;
+    
+    // Repopular lojas baseado na regional selecionada
     popularDropdownLoja();
+    
+    // Tentar manter a loja selecionada se ainda existir na lista
+    if(lojaAtual && lojaAtual !== 'todos'){
+        var s = document.getElementById('filtro-loja');
+        var existe = false;
+        for(var i = 0; i < s.options.length; i++){
+            if(s.options[i].value === lojaAtual){
+                existe = true;
+                break;
+            }
+        }
+        if(existe){
+            document.getElementById('filtro-loja').value = lojaAtual;
+        }
+    }
 }
 
 // ============ COBRANÇA ============
