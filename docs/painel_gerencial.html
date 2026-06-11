@@ -118,6 +118,7 @@
 .status-recusado { color: #cc0000; font-weight: bold; }
 .status-esclarecimento { color: #e67e22; font-weight: bold; }
 .status-pendente { color: #888; }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
 </style>
 </head>
 <body>
@@ -142,7 +143,7 @@
 </div>
 
 <div class="app-screen" id="app-screen">
-    <div class="topbar"><button onclick="toggleMenu()">☰</button><h2 id="topbar-titulo">📊 Painel de Vales</h2><button onclick="sair()">🚪 Sair</button></div>
+    <div class="topbar"><button onclick="toggleMenu()">☰</button><h2 id="topbar-titulo">📊 Painel de Vales</h2><span style="display:flex;align-items:center;gap:10px"><span id="topbar-notificacao" style="display:none;background:#fff3cd;color:#856404;padding:5px 12px;border-radius:20px;cursor:pointer;font-size:0.75em;font-weight:600;animation:pulse 2s infinite;white-space:nowrap" onclick="abrirApp('duvidas');fecharAlertaForum()" title="Clique para ver o Fórum">🔔 Nova pergunta no Fórum!</span><button onclick="sair()">🚪 Sair</button></span></div>
     <div class="menu-overlay" id="menu-overlay" onclick="toggleMenu()"></div>
     <div class="menu-lateral" id="menu-lateral">
     <h3>🏢 Portal Gestao e Controles</h3>
@@ -151,7 +152,7 @@
 <div class="app-item" id="menu-vales" onclick="abrirApp('vales')"><span>📊</span> Painel de Vales</div>
     <div class="app-item" id="menu-cobranca" onclick="abrirApp('cobranca')"><span>💰</span> Cobrança de Boletos</div>
     <div class="app-item" id="menu-relatorio" onclick="abrirApp('relatorio')"><span>📈</span> Relatório Abono/CTRL H</div>
-    <div class="app-item" id="menu-duvidas" onclick="abrirApp('duvidas')"><span>📚</span> Central de Dúvidas</div>
+    <div class="app-item" id="menu-duvidas" onclick="abrirApp('duvidas')"><span>💬</span> Fórum <span id="badge-forum" style="display:none;background:#cc0000;color:white;border-radius:50%;padding:2px 7px;font-size:10px;margin-left:5px;">!</span></div>
     <div class="app-item" id="menu-uber" onclick="abrirApp('uber')"><span>🚗</span> Uber Corporativo</div>
     <hr style="margin:10px 0;border-color:#eee;">
     <div class="app-item" onclick="abrirModalSenha()"><span>🔐</span> Alterar Minha Senha</div>
@@ -532,8 +533,7 @@ async function carregarDashboardExecutivo(){
     var totalValor=0,totalQtd=d.length;
     d.forEach(function(i){totalValor+=parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0;});
     var ticketMedio=totalQtd>0?totalValor/totalQtd:0;
-    
-      // Evolução mensal (regra: dia 21 ao dia 20)
+          // Evolução mensal (regra: dia 21 ao dia 20)
     var hoje=new Date(),mesesEvol=[];
     for(var m=11;m>=0;m--){
         // Mês de referência começa no dia 21 do mês anterior
@@ -1771,6 +1771,23 @@ if(tipoAcesso==='admin'&&!ADMINS[v]){document.getElementById('login-erro').style
 
 function sair(){localStorage.removeItem('kalunga_usuario');localStorage.removeItem('kalunga_tipo');usuarioAtual=null;document.getElementById('login-screen').style.display='flex';document.getElementById('app-screen').style.display='none';document.getElementById('login-senha').value='';document.getElementById('login-erro').style.display='none';document.getElementById('menu-lateral').classList.remove('ativo');document.getElementById('menu-overlay').classList.remove('ativo');}
 function toggleMenu(){document.getElementById('menu-lateral').classList.toggle('ativo');document.getElementById('menu-overlay').classList.toggle('ativo');}
+// ============ NOTIFICAÇÕES DO FÓRUM ============
+function mostrarAlertaForum(){
+    document.getElementById('topbar-notificacao').style.display = 'inline-block';
+    document.getElementById('badge-forum').style.display = 'inline-block';
+    // Auto-esconder após 30 segundos
+    setTimeout(function(){
+        document.getElementById('topbar-notificacao').style.display = 'none';
+    }, 30000);
+}
+
+function fecharAlertaForum(){
+    document.getElementById('topbar-notificacao').style.display = 'none';
+    document.getElementById('badge-forum').style.display = 'none';
+}
+
+// Simular notificação (remova esta linha quando integrar com Power Automate)
+// setTimeout(mostrarAlertaForum, 5000);
 function abrirAba(nome){document.querySelectorAll('#tela-vales .tab-btn').forEach(b=>b.classList.remove('ativo'));document.querySelectorAll('#tela-vales .tab-content').forEach(c=>c.classList.remove('ativo'));event.target.classList.add('ativo');document.getElementById('aba-'+nome).classList.add('ativo');aplicarFiltros();}
 
 autoLogin();
