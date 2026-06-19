@@ -135,10 +135,9 @@
         <div id="login-field-container">
             <input type="text" id="login-select" placeholder="Digite o código da loja (ex: 0008)">
         </div>
-        <input type="password" id="login-senha" placeholder="Senha">
+        <input type="password" id="login-senha" placeholder="Senha" onkeydown="if(event.key==='Enter')fazerLogin()">
         <button onclick="fazerLogin()">🔐 Entrar</button>
         <p class="erro" id="login-erro">Acesso inválido!</p>
-        <p style="font-size:0.7em;color:#aaa;margin-top:8px;">Senha padrão: kalunga2026</p>
     </div>
 </div>
 
@@ -415,6 +414,7 @@ var lim=new Date(anoRef,mesRef,23,23,59,59);
 function edh(n){if(!n)return'';var f=parseFloat(n);if(isNaN(f))return'';var d=new Date((f-25569)*86400*1000);return d.toLocaleDateString('pt-BR')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
 function ed(n){if(!n)return'';var x=parseInt(n);if(isNaN(x))return n;var d=new Date((x-25569+1)*86400*1000);return d.toLocaleDateString('pt-BR');}
 function fm(v){return'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function esc(s){if(s===null||s===undefined)return'';return (s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function gp(dataInicio, dataFim){
     if(!dataInicio && !dataFim) return null;
     
@@ -603,6 +603,10 @@ function dashLimparFiltros(){
     carregarDashboardExecutivo();
 }
 async function carregarDashboardExecutivo(){
+    var elLoading=document.getElementById('dash-exec-content');
+    if(elLoading && elLoading.innerHTML.trim()===''){
+        elLoading.innerHTML='<div style="text-align:center;padding:60px 20px;color:#888;"><div style="font-size:2em;margin-bottom:10px;">⏳</div>Carregando dashboard...</div>';
+    }
     await carregarDadosHistoricos();
     var todosDados = obterTodosDados();
     
@@ -997,12 +1001,12 @@ const URL_APROVACAO = 'https://defaulta375ca2950b6471c8c9dc95b1300d8.1c.environm
 const URL_ATUALIZAR_SENHA = 'https://defaulta375ca2950b6471c8c9dc95b1300d8.1c.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/133915db2a0f4d91a508dd5b4654613d/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=BErzuvTFVrfCvGO6DwHTlhkXcM6kH2AE52mSvpaw7pg'
 function abrirModalAprovacao(chaveUnica, loja, dataVale, motivo, valor, statusAtual, obsRegional, respostaLoja, cracha, aprovador, situacao){
     var h='<div class="modal-aprovacao-info">';
-    h+='<p><span>Loja:</span> '+loja+'</p>';
-    h+='<p><span>Data do Vale:</span> '+dataVale+'</p>';
-    h+='<p><span>Motivo:</span> '+motivo+'</p>';
-    h+='<p><span>Valor:</span> '+valor+'</p>';
-    h+='<p><span>Situação:</span> '+(situacao||'⏳ Aguardando')+'</p>';
-       h+='<p><span>Status Aprovação:</span> '+(statusAtual||'⬜ Pendente')+'</p>';
+    h+='<p><span>Loja:</span> '+esc(loja)+'</p>';
+    h+='<p><span>Data do Vale:</span> '+esc(dataVale)+'</p>';
+    h+='<p><span>Motivo:</span> '+esc(motivo)+'</p>';
+    h+='<p><span>Valor:</span> '+esc(valor)+'</p>';
+    h+='<p><span>Situação:</span> '+esc(situacao||'⏳ Aguardando')+'</p>';
+       h+='<p><span>Status Aprovação:</span> '+esc(statusAtual||'⬜ Pendente')+'</p>';
     if(respostaLoja && tipoAcesso!=='loja'){
         h+='<p><span>Resposta da Loja:</span> <span style="color:#0a0;font-weight:bold;">✅ Respondido</span></p>';
     }
@@ -1040,12 +1044,12 @@ function abrirModalAprovacao(chaveUnica, loja, dataVale, motivo, valor, statusAt
         if(respostaLoja && statusAtual==='Esclarecimento'){
             h+='<div style="background:#e8f5e9;padding:10px;border-radius:6px;margin:8px 0;border-left:4px solid #0a0;">';
             h+='<strong>✅ Loja já respondeu:</strong><br>';
-            h+='<span style="font-size:0.9em;">'+respostaLoja+'</span>';
+            h+='<span style="font-size:0.9em;">'+esc(respostaLoja)+'</span>';
             h+='</div>';
         }
         
         h+='<label><strong>Observação:</strong></label>';
-        h+='<textarea class="modal-aprovacao-textarea" id="aprov-obs" placeholder="Descreva o motivo...">'+(obsRegional||'')+'</textarea>';
+        h+='<textarea class="modal-aprovacao-textarea" id="aprov-obs" placeholder="Descreva o motivo...">'+esc(obsRegional||'')+'</textarea>';
     }
     if(podeEditar){
         h+='<div class="modal-aprovacao-botoes" style="margin-top:10px;">';
@@ -1068,7 +1072,7 @@ function abrirModalAprovacao(chaveUnica, loja, dataVale, motivo, valor, statusAt
     if(tipoAcesso==='loja' && (statusAtual==='Esclarecimento' || statusAtual==='Recusado')){
         h+='<div style="background:#fff9e6;padding:12px;border-radius:8px;margin:10px 0;border-left:4px solid #e67e22;">';
         h+='<p style="font-weight:bold;color:#e67e22;margin-bottom:8px;">📝 O Regional solicitou esclarecimento. Responda abaixo:</p>';
-        h+='<textarea class="modal-aprovacao-textarea" id="aprov-resposta" placeholder="Descreva sua resposta..." style="width:100%;min-height:100px;">'+(respostaLoja||'')+'</textarea>';
+        h+='<textarea class="modal-aprovacao-textarea" id="aprov-resposta" placeholder="Descreva sua resposta..." style="width:100%;min-height:100px;">'+esc(respostaLoja||'')+'</textarea>';
         h+='<button class="btn-esclarecimento" onclick="enviarRespostaLoja()" style="margin-top:8px;width:100%;">💬 Enviar Resposta</button>';
         h+='</div>';
     }
@@ -1077,7 +1081,7 @@ function abrirModalAprovacao(chaveUnica, loja, dataVale, motivo, valor, statusAt
     if((tipoAcesso==='regional'||tipoAcesso==='admin') && respostaLoja && statusAtual==='Esclarecimento'){
         h+='<div style="background:#e8f5e9;padding:12px;border-radius:8px;margin:10px 0;border-left:4px solid #0a0;">';
         h+='<p style="font-weight:bold;color:#0a0;margin-bottom:5px;">✅ Loja já respondeu:</p>';
-        h+='<p style="font-size:0.9em;">'+respostaLoja+'</p>';
+        h+='<p style="font-size:0.9em;">'+esc(respostaLoja)+'</p>';
         h+='</div>';
     }
     
@@ -1087,8 +1091,8 @@ function abrirModalAprovacao(chaveUnica, loja, dataVale, motivo, valor, statusAt
     // 1. Se tem pergunta do regional (observacao)
     if(obsRegional){
         h+='<div class="historico-item" style="background:#fff9e6;padding:8px;border-radius:4px;border-left:3px solid #e67e22;">';
-        h+='<strong>💬 '+(aprovador||'Regional')+' perguntou:</strong><br>';
-        h+='<span>'+obsRegional+'</span>';
+        h+='<strong>💬 '+esc(aprovador||'Regional')+' perguntou:</strong><br>';
+        h+='<span>'+esc(obsRegional)+'</span>';
         h+='</div>';
     }
     
@@ -1096,7 +1100,7 @@ function abrirModalAprovacao(chaveUnica, loja, dataVale, motivo, valor, statusAt
     if(respostaLoja){
         h+='<div class="historico-item" style="background:#e8f5e9;padding:8px;border-radius:4px;border-left:3px solid #0a0;">';
         h+='<strong>🏪 Loja respondeu:</strong><br>';
-        h+='<span>'+respostaLoja+'</span>';
+        h+='<span>'+esc(respostaLoja)+'</span>';
         h+='</div>';
     }
     
@@ -1124,7 +1128,7 @@ function abrirModalAprovacao(chaveUnica, loja, dataVale, motivo, valor, statusAt
         h+='<div class="historico-status"><strong>📝 Histórico de Edições:</strong>';
         var linhas=logEdicoes.split('\n');
         linhas.forEach(function(linha){
-            h+='<div class="historico-item" style="font-size:0.75em;color:#555;">'+linha+'</div>';
+            h+='<div class="historico-item" style="font-size:0.75em;color:#555;">'+esc(linha)+'</div>';
         });
         h+='</div>';
     }
