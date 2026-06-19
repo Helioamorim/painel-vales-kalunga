@@ -1138,6 +1138,15 @@ function enviarAprovacao(status){
     var chave=document.getElementById('aprov-chave').value;
     var obs=document.getElementById('aprov-obs')?.value||'';
     
+    // Buscar a resposta ATUAL da loja para não apagar
+    var respostaAtual='';
+    for(var i=0;i<dadosBrutos.length;i++){
+        if(dadosBrutos[i]['ChaveUnica']===chave){
+            respostaAtual=dadosBrutos[i]['Resposta_Loja']||'';
+            break;
+        }
+    }
+    
     fetch(URL_APROVACAO,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -1145,7 +1154,7 @@ function enviarAprovacao(status){
             ChaveUnica:chave,
             Status_Aprovacao:status,
             Observacao_Regional:obs,
-            Resposta_Loja:'',
+            Resposta_Loja:respostaAtual,  // ← MANTÉM a resposta da loja
             Aprovador:usuarioAtual,
             Data_Aprovacao:new Date().toISOString().split('T')[0]
         })
@@ -1158,10 +1167,10 @@ function enviarAprovacao(status){
                 dadosBrutos[i]['Status_Aprovacao']=status;
                 dadosBrutos[i]['Observacao_Regional']=obs;
                 dadosBrutos[i]['Aprovador']=usuarioAtual;
+                // NÃO altera Resposta_Loja - mantém a resposta!
                 break;
             }
         }
-        // Recarregar a tabela
         carregarTabelas(dadosFiltrados);
         alert('✅ Status atualizado: '+status);
         fecharModal();
@@ -1173,13 +1182,22 @@ function enviarRespostaLoja(){
     var chave=document.getElementById('aprov-chave').value;
     var resposta=document.getElementById('aprov-resposta')?.value||'';
     
+    // Buscar a observação ATUAL do regional para não apagar
+    var obsAtual='';
+    for(var i=0;i<dadosBrutos.length;i++){
+        if(dadosBrutos[i]['ChaveUnica']===chave){
+            obsAtual=dadosBrutos[i]['Observacao_Regional']||'';
+            break;
+        }
+    }
+    
     fetch(URL_APROVACAO,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
             ChaveUnica:chave,
             Status_Aprovacao:'Esclarecimento',
-            Observacao_Regional:'',
+            Observacao_Regional:obsAtual,  // ← MANTÉM a pergunta do Regional
             Resposta_Loja:resposta,
             Aprovador:usuarioAtual,
             Data_Aprovacao:new Date().toISOString().split('T')[0]
@@ -1187,10 +1205,11 @@ function enviarRespostaLoja(){
     })
     .then(r=>r.json())
     .then(d=>{
-        // Atualizar localmente
+        // Atualizar localmente (apenas a resposta, mantendo a observação)
         for(var i=0;i<dadosBrutos.length;i++){
             if(dadosBrutos[i]['ChaveUnica']===chave){
                 dadosBrutos[i]['Resposta_Loja']=resposta;
+                // NÃO altera Observacao_Regional - mantém a pergunta!
                 break;
             }
         }
