@@ -998,7 +998,71 @@ function verDashboardLoja(loja){
 function abrirModalLoja(loja){var d=dadosFiltrados.filter(i=>i['Loja']===loja);d.sort((a,b)=>(parseFloat(b['HoraInicio'])||0)-(parseFloat(a['HoraInicio'])||0));var t=d.reduce((s,i)=>s+(parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0),0);var h='<h3>📋 '+loja+' - '+d.length+' vales</h3><br><table><thead><tr><th>Data/Hora Solic.</th><th>Data do Vale</th><th>Crachá</th><th>Motivo</th><th>Tipo Falha</th><th>Valor</th><th>Data Envio Fin.</th><th>Status</th></tr></thead><tbody>';d.forEach(i=>{var s=getStatus(i['DataVale'],i['HoraInicio']);h+='<tr><td>'+edh(i['HoraInicio'])+'</td><td>'+ed(i['DataVale'])+'</td><td>'+(i['Cracha']||'')+'</td><td>'+(i['Motivo']||'')+'</td><td>'+(i['TipoFalha']||'')+'</td><td class="valor">'+fm(parseFloat((i['ValorVale']||'0').toString().replace(',','.'))||0)+'</td><td>'+(i['DataEnvioFin']&&i['DataEnvioFin']!==''?ed(i['DataEnvioFin']):'-')+'</td><td class="'+s.classe+'">'+s.texto+'</td></tr>';});h+='<tr style="font-weight:bold;background:#e6f0ff;"><td colspan="7">TOTAL</td><td class="valor">'+fm(t)+'</td></tr></tbody></table>';document.getElementById('modal-titulo').textContent='🏪 '+loja;document.getElementById('modal-body').innerHTML=h;document.getElementById('modal-overlay').classList.add('ativo');}
 
 const URL_APROVACAO = 'https://defaulta375ca2950b6471c8c9dc95b1300d8.1c.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/f8865e8b8dd0480c87275c5d663a6245/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=nuzmGtK1XMMfhAE_MTgoHqO8SdTa-Tqsh4cwKNUFQDU';
-const URL_ATUALIZAR_SENHA = 'https://defaulta375ca2950b6471c8c9dc95b1300d8.1c.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/133915db2a0f4d91a508dd5b4654613d/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=BErzuvTFVrfCvGO6DwHTlhkXcM6kH2AE52mSvpaw7pg'
+const URL_ATUALIZAR_SENHA = 'https://defaulta375ca2950b6471c8c9dc95b1300d8.1c.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/133915db2a0f4d91a508dd5b4654613d/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=BErzuvTFVrfCvGO6DwHTlhkXcM6kH2AE52mSvpaw7pg';
+
+// ============ FUNÇÕES AUXILIARES PARA FETCH ============
+function fetchComRetry(url, options, maxRetries, timeoutMs) {
+    maxRetries = maxRetries || 3;
+    timeoutMs = timeoutMs || 90000;
+    
+    return new Promise(function(resolve, reject) {
+        var tentativa = 0;
+        
+        function tentar() {
+            tentativa++;
+            console.log('🔄 Tentativa ' + tentativa + ' de ' + maxRetries);
+            
+            var controller = new AbortController();
+            var timeoutId = setTimeout(function() {
+                controller.abort();
+            }, timeoutMs);
+            
+            var fetchOptions = Object.assign({}, options, {
+                signal: controller.signal
+            });
+            
+            fetch(url, fetchOptions)
+                .then(function(response) {
+                    clearTimeout(timeoutId);
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    return response.json();
+                })
+                .then(function(data) {
+                    console.log('✅ Sucesso!');
+                    resolve(data);
+                })
+                .catch(function(error) {
+                    clearTimeout(timeoutId);
+                    console.error('❌ Erro:', error.message);
+                    
+                    if (tentativa < maxRetries) {
+                        setTimeout(tentar, 2000 * tentativa);
+                    } else {
+                        reject(error);
+                    }
+                });
+        }
+        
+        tentar();
+    });
+}
+
+function mostrarToast(mensagem) {
+    var toast = document.getElementById('toast-msg');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast-msg';
+        toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#003366;color:white;padding:10px 20px;border-radius:20px;font-size:0.85em;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = mensagem;
+    toast.style.display = 'block';
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(function() {
+        toast.style.display = 'none';
+    }, 4000);
+}
+
 function abrirModalAprovacao(chaveUnica, loja, dataVale, motivo, valor, statusAtual, obsRegional, respostaLoja, cracha, aprovador, situacao){
     var h='<div class="modal-aprovacao-info">';
     h+='<p><span>Loja:</span> '+esc(loja)+'</p>';
@@ -1574,13 +1638,15 @@ function abrirModalCobranca(loja){
 function excluirVale(chave){
     if(!confirm('⚠️ Tem certeza que deseja EXCLUIR este vale?\nEsta ação não pode ser desfeita!'))return;
     
-    fetch(URL_APROVACAO,{
+    mostrarToast('🗑️ Excluindo vale...');
+    
+    fetchComRetry(URL_APROVACAO,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
             ChaveUnica:chave,
             Status_Aprovacao:'Excluido',
-            Observacao_Regional:'Vale excluído pelo Admin',
+            Observacao_Regional:'Vale excluído pelo Admin em ' + new Date().toLocaleString('pt-BR'),
             Resposta_Loja:'',
             Aprovador:usuarioAtual,
             Data_Aprovacao:new Date().toISOString().split('T')[0],
@@ -1592,19 +1658,32 @@ function excluirVale(chave){
             Situacao:''
         })
     })
-    .then(r=>r.json())
-    .then(d=>{
+    .then(function(d){
+        // Marcar como excluído em vez de remover do array
         for(var i=0;i<dadosBrutos.length;i++){
             if(dadosBrutos[i]['ChaveUnica']===chave){
-                dadosBrutos.splice(i,1);
+                dadosBrutos[i]['Status_Aprovacao'] = 'Excluido';
+                dadosBrutos[i]['Aprovador'] = usuarioAtual;
                 break;
             }
         }
         carregarTabelas(dadosFiltrados);
-        alert('🗑️ Vale excluído!');
+        mostrarToast('✅ Vale excluído com sucesso!');
         fecharModal();
     })
-    .catch(e=>alert('❌ Erro ao excluir'));
+    .catch(function(e){
+        // Mesmo com erro, marcar como excluído localmente
+        for(var i=0;i<dadosBrutos.length;i++){
+            if(dadosBrutos[i]['ChaveUnica']===chave){
+                dadosBrutos[i]['Status_Aprovacao'] = 'Excluido';
+                dadosBrutos[i]['Aprovador'] = usuarioAtual;
+                break;
+            }
+        }
+        carregarTabelas(dadosFiltrados);
+        mostrarToast('⚠️ Salvo localmente. Tente novamente mais tarde.');
+        fecharModal();
+    });
 }
 // ============ LOGIN ============
 function atualizarSituacao(situacao){
@@ -1641,6 +1720,15 @@ function salvarEdicao(){
     var motivo=document.getElementById('edit-motivo').value;
     var obs=document.getElementById('edit-obs').value||'Dados editados pelo Admin';
     
+    // Validação
+    if(!chave || !data || !cracha || !valor || !motivo){
+        document.getElementById('edit-msg').textContent='❌ Preencha todos os campos!';
+        document.getElementById('edit-msg').style.color='#cc0000';
+        return;
+    }
+    
+    mostrarToast('✏️ Salvando alterações...');
+    
     // Encontrar o vale original para comparar
     var original=null;
     for(var i=0;i<dadosBrutos.length;i++){
@@ -1665,7 +1753,11 @@ function salvarEdicao(){
         if(data&&data!==dataAntiga)mudancas.push('Data: '+dataAntiga+' → '+data);
         
         if(mudancas.length>0)log+=mudancas.join(' | ');
-        else log+='Nenhuma alteração detectada';
+        else {
+            document.getElementById('edit-msg').textContent='⚠️ Nenhuma alteração detectada';
+            document.getElementById('edit-msg').style.color='#e67e22';
+            return;
+        }
     }else{
         log+='Vale editado (dados originais não encontrados)';
     }
@@ -1677,47 +1769,66 @@ function salvarEdicao(){
     var dataExcel='';
     if(data){var d=new Date(data+'T00:00:00');dataExcel=Math.round((d.getTime()/86400000)+25569)+'';}
     
-    fetch(URL_APROVACAO,{
+    // Usar fetchComRetry em vez de fetch
+    fetchComRetry(URL_APROVACAO,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
             ChaveUnica:chave,
             Status_Aprovacao:original['Status_Aprovacao']||'Editado',
             Observacao_Regional:obs,
-            Resposta_Loja:'',
+            Resposta_Loja:original['Resposta_Loja']||'',
             Aprovador:usuarioAtual,
             Data_Aprovacao:new Date().toISOString().split('T')[0],
             Cracha_Editado:cracha,
             DataVale_Editada:data?dataExcel:'',
             Valor_Editado:valor,
             Motivo_Editado:motivo,
-            Log_Edicoes:log
+            Log_Edicoes:log,
+            Situacao:original['Situacao']||''
         })
     })
-    .then(r=>r.json())
-    .then(d=>{
-       for(var i=0;i<dadosBrutos.length;i++){
-    if(dadosBrutos[i]['ChaveUnica']===chave){
-        if(cracha)dadosBrutos[i]['Cracha']=cracha;
-        if(valor)dadosBrutos[i]['ValorVale']=valor;
-        if(motivo)dadosBrutos[i]['Motivo']=motivo;
-        // Só muda o status para Editado se estiver Pendente ou vazio
-        if(!dadosBrutos[i]['Status_Aprovacao']||dadosBrutos[i]['Status_Aprovacao']==='Pendente'){
-            dadosBrutos[i]['Status_Aprovacao']='Editado';
+    .then(function(d){
+        // Atualizar dados locais
+        for(var i=0;i<dadosBrutos.length;i++){
+            if(dadosBrutos[i]['ChaveUnica']===chave){
+                if(cracha)dadosBrutos[i]['Cracha']=cracha;
+                if(valor)dadosBrutos[i]['ValorVale']=valor;
+                if(motivo)dadosBrutos[i]['Motivo']=motivo;
+                if(data)dadosBrutos[i]['DataVale']=dataExcel;
+                if(!dadosBrutos[i]['Status_Aprovacao']||dadosBrutos[i]['Status_Aprovacao']==='Pendente'){
+                    dadosBrutos[i]['Status_Aprovacao']='Editado';
+                }
+                dadosBrutos[i]['Observacao_Regional']=obs;
+                dadosBrutos[i]['LogEdicoes']=log;
+                break;
+            }
         }
-        dadosBrutos[i]['Observacao_Regional']=obs;
-        dadosBrutos[i]['LogEdicoes']=log;
-        break;
-    }
-}
         carregarTabelas(dadosFiltrados);
         document.getElementById('edit-msg').textContent='✅ Alterações salvas!';
         document.getElementById('edit-msg').style.color='#0a0';
-        setTimeout(fecharModalEditar,1000);
+        mostrarToast('✅ Alterações salvas com sucesso!');
+        setTimeout(function(){
+            fecharModalEditar();
+            fecharModal();
+        },1000);
     })
-    .catch(e=>{
-        document.getElementById('edit-msg').textContent='❌ Erro ao salvar';
-        document.getElementById('edit-msg').style.color='#cc0000';
+    .catch(function(e){
+        // Salvar localmente mesmo com erro
+        for(var i=0;i<dadosBrutos.length;i++){
+            if(dadosBrutos[i]['ChaveUnica']===chave){
+                if(cracha)dadosBrutos[i]['Cracha']=cracha;
+                if(valor)dadosBrutos[i]['ValorVale']=valor;
+                if(motivo)dadosBrutos[i]['Motivo']=motivo;
+                if(data)dadosBrutos[i]['DataVale']=dataExcel;
+                dadosBrutos[i]['LogEdicoes']=log;
+                break;
+            }
+        }
+        carregarTabelas(dadosFiltrados);
+        document.getElementById('edit-msg').textContent='⚠️ Salvo localmente. Sincronize depois.';
+        document.getElementById('edit-msg').style.color='#e67e22';
+        mostrarToast('⚠️ Salvo localmente. Tente novamente mais tarde.');
     });
 }
 function exportarExcel(){
