@@ -1475,13 +1475,12 @@ function aplicarFiltros(){
                 return (i['Situacao']||'')==='Não Localizado';
             });
         } else if(sf==='Aguardando'){
-            // Aguardando = sem status E sem situação (aguardando envio ao financeiro)
-            d=d.filter(function(i){
-                var sit = i['Situacao'] || '';
-                var sta = i['Status_Aprovacao'] || '';
-                return sta==='' && sit==='';
-            });
-        } else if(sf==='Pendente'){
+    // Aguardando = SOMENTE filtrar por Situacao, IGNORANDO Status_Aprovacao
+    d=d.filter(function(i){
+        var sit = i['Situacao'] || '';
+        return sit==='Aguardando' || sit==='';
+    });
+} else if(sf==='Pendente'){
             // Pendente = sem status de aprovação (aguardando aprovação do regional)
             d=d.filter(function(i){
                 var sta = i['Status_Aprovacao'] || '';
